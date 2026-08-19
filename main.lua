@@ -30,8 +30,189 @@ local Theme = {
 	Glow = Color3.fromRGB(199, 210, 235),
 	DeepGlow = Color3.fromRGB(58, 66, 92),
 }
+
 local FontTitle = Enum.Font.Michroma
 local FontBody = Enum.Font.Nunito
+
+------------------------------------------------------------
+-- TARGET BRAINROTS (generated)
+-- Cancel ONLY if a non-target DisplayName appears on THEIR side.
+------------------------------------------------------------
+local TargetBrainrots = {
+	["Strawberry Elephant"] = true,
+	["Headless Horseman"] = true,
+	["Meowl"] = true,
+	["John Pork"] = true,
+	["Skibidi Toilet"] = true,
+	["Griffin"] = true,
+	["Dragon Aquanini"] = true,
+	["Dragon Gingerini"] = true,
+	["Hydra Dragon Cannelloni"] = true,
+	["Signore Carapace"] = true,
+	["Dragon Cannelloni"] = true,
+	["Love Love Bear"] = true,
+	["Moby Bros"] = true,
+	["Digi Narwhal"] = true,
+	["Kraken"] = true,
+	["La Supreme Combinasion"] = true,
+	["Elefanto Frigo"] = true,
+	["Hydra Bunny"] = true,
+	["Celestial Pegasus"] = true,
+	["Cerberus"] = true,
+	["Jelly Moby"] = true,
+	["Bumbatron"] = true,
+	["Bunny and Eggy"] = true,
+	["Popcuru and Fizzuru"] = true,
+	["La Breakfast Combinasion"] = true,
+	["Rosey and Teddy"] = true,
+	["Capitano Moby"] = true,
+	["Cooki and Milki"] = true,
+	["Arcadragon"] = true,
+	["Burguro And Fryuro"] = true,
+	["Los Secret Combinasionas"] = true,
+	["Ketupat Bros"] = true,
+	["Reinito Sleighito"] = true,
+	["Fortunu and Cashuru"] = true,
+	["Los Amigos"] = true,
+	["Pizza and Ranch"] = true,
+	["Antonio"] = true,
+	["La Secret Combinasion"] = true,
+	["Pancake and Syrup"] = true,
+	["Foxini Lanternini"] = true,
+	["Kalika Bros"] = true,
+	["Los Sekolahs"] = true,
+	["Sammyni Fattini"] = true,
+	["Fishino Clownino"] = true,
+	["Cash or Card"] = true,
+	["Fragrama and Chocrama"] = true,
+	["La Casa Boo"] = true,
+	["La Fuse Machine"] = true,
+	["Los Admins"] = true,
+	["Duggy Bros"] = true,
+	["La Food Combinasion"] = true,
+	["Yetimatic"] = true,
+	["S&#x27;more Serat"] = true,
+	["Sammyni Cakini"] = true,
+	["Boppin Bunny"] = true,
+	["Spooky and Pumpky"] = true,
+	["Ginger Gerat"] = true,
+	["La Ginger Sekolah"] = true,
+	["Los Chillis"] = true,
+	["Los Hackers"] = true,
+	["Bearito Cabinito"] = true,
+	["Rubiko and Kubiko"] = true,
+	["Capitano Americano"] = true,
+	["Examen Bros"] = true,
+	["Los Spaghettis"] = true,
+	["Rubrikiko"] = true,
+	["Festive 67"] = true,
+	["Guest 666"] = true,
+	["Quackini Snackini"] = true,
+	["Queen Bee"] = true,
+	["Cloverat Clapat"] = true,
+	["La Summer Grande"] = true,
+	["Los Tictacs"] = true,
+	["Spaghetti Tualetti"] = true,
+	["Candini Fluffini"] = true,
+	["Caylusaurus"] = true,
+	["Hopilikalika Hopilikalako"] = true,
+	["La Easter Grande"] = true,
+	["Steakini Fattini"] = true,
+	["Garama and Madundung"] = true,
+	["La Anniversary Grande"] = true,
+	["Nacho Spyder"] = true,
+	["Rosetti Tualetti"] = true,
+	["Scorpino Coasterino"] = true,
+	["Money Money Bros"] = true,
+	["Gold Gold Gold"] = true,
+	["Jolly Jolly Sahur"] = true,
+	["Lavadorito Spinito"] = true,
+	["Gym Bros"] = true,
+	["Ketchuru and Musturu"] = true,
+	["Los Tangcitos"] = true,
+	["Rico Dinero"] = true,
+	["Tirilikalika Tirilikalako"] = true,
+	["La Lucky Grande"] = true,
+	["La Romantic Grande"] = true,
+	["Orcaledon"] = true,
+	["Swaggy Bros"] = true,
+	["Tictac Sahur"] = true,
+	["Dug Dug Dug"] = true,
+	["Ketupat Kepat"] = true,
+	["La Taco Combinasion"] = true,
+	["Coco and Mango"] = true,
+	["Tang Tang Keletang"] = true,
+	["Abyssaloco"] = true,
+	["Esok Goala"] = true,
+	["Fragola La La La"] = true,
+	["Lovin Rose"] = true,
+	["Los Tacoritas"] = true,
+	["Eviledon"] = true,
+	["Los Primos"] = true,
+	["Esok Sekolah"] = true,
+	["La Jolly Grande"] = true,
+	["Los Cupids"] = true,
+	["Los Mariachis"] = true,
+	["Los Puggies"] = true,
+	["Sand Sand Sand"] = true,
+	["W or L"] = true,
+	["Globa Steppa"] = true,
+	["Gobblino Uniciclino"] = true,
+	["Tralaledon"] = true,
+	["Mieteteira Bicicleteira"] = true,
+	["Tuff Toucan"] = true,
+	["Chillin Chili"] = true,
+	["Chipso and Queso"] = true,
+	["Money Money Reindeer"] = true,
+	["La Spooky Grande"] = true,
+	["Bacuru and Egguru"] = true,
+	["Los Bros"] = true,
+	["La Extinct Grande"] = true,
+	["Los Candies"] = true,
+	["Los Fruits"] = true,
+	["Celularcini Viciosini"] = true,
+	["Los 67"] = true,
+	["Capitano Gullini"] = true,
+	["Los Mobilis"] = true,
+	["Churrito Bunnito"] = true,
+	["Money Money Puggy"] = true,
+	["Cigno Fulgoro"] = true,
+	["Los Hotspotsitos"] = true,
+	["Los Jolly Combinasionas"] = true,
+	["Los Spooky Combinasionas"] = true,
+	["Los Planitos"] = true,
+}
+
+local AnimalsData
+pcall(function()
+	AnimalsData = require(ReplicatedStorage:WaitForChild("Datas"):WaitForChild("Animals"))
+end)
+
+local function normKey(s)
+	return (tostring(s or ""):lower():gsub("%s+", ""):gsub("'", ""):gsub("’", ""))
+end
+
+-- DisplayName ONLY
+local knownAnimalNames = {}
+pcall(function()
+	if AnimalsData then
+		for _, info in pairs(AnimalsData) do
+			if type(info) == "table" and type(info.DisplayName) == "string" and #info.DisplayName >= 3 then
+				knownAnimalNames[info.DisplayName] = true
+			end
+		end
+	end
+end)
+
+local function isTargetName(name)
+	if not name or name == "" then return false end
+	if TargetBrainrots[name] then return true end
+	local key = normKey(name)
+	for t, _ in pairs(TargetBrainrots) do
+		if normKey(t) == key then return true end
+	end
+	return false
+end
 
 ------------------------------------------------------------
 -- REMOTES
@@ -43,6 +224,7 @@ local function getRemote(name)
 		["RE/TradeService/Accept"] = 43,
 		["RF/TradeService/AcceptInvite"] = 37,
 		["RE/TradeService/CreateInvite"] = 41,
+		["RE/TradeService/Cancel"] = 52,
 	}
 	local idx = indexMap[name]
 	if idx then
@@ -57,11 +239,93 @@ end
 local READY_GUID = "d73acf93-6f32-44df-b813-0f6b32c7afd9"
 local ACCEPT_GUID = "918ee0f5-e98f-413f-b76e-baee47b021cb"
 local ACCEPT_INVITE_GUID = "57624f2b-8aa9-4974-bb7a-08f058af33ef"
+local CANCEL_GUID = "9d1937e7-6262-487b-98be-af45618270c9"
 
 local acceptInviteRF = getRemote("RF/TradeService/AcceptInvite")
 local createInviteRE = getRemote("RE/TradeService/CreateInvite")
 local readyRE = getRemote("RE/TradeService/Ready")
 local acceptRE = getRemote("RE/TradeService/Accept")
+local cancelRE = getRemote("RE/TradeService/Cancel")
+
+print("[K2] Ready :", readyRE and readyRE.Name or "MISSING")
+print("[K2] Accept:", acceptRE and acceptRE.Name or "MISSING")
+print("[K2] Invite:", acceptInviteRF and acceptInviteRF.Name or "MISSING")
+print("[K2] Create:", createInviteRE and createInviteRE.Name or "MISSING")
+print("[K2] Cancel:", cancelRE and cancelRE.Name or "MISSING")
+
+local function cancelTrade(reason)
+	if not cancelRE then return end
+	print("[K2] AUTO-CANCEL:", reason or "unknown")
+	pcall(function()
+		cancelRE:FireServer(CANCEL_GUID)
+	end)
+end
+
+------------------------------------------------------------
+-- THEIR SIDE ONLY
+------------------------------------------------------------
+local function isUnderLocalSide(obj)
+	local cur = obj
+	while cur and cur ~= plr.PlayerGui do
+		local n = string.lower(tostring(cur.Name))
+		if n:find("local", 1, true) or n:find("self", 1, true) or n:find("mine", 1, true)
+			or n:find("myoffer", 1, true) or n:find("my_side", 1, true)
+			or n == string.lower(plr.Name) or n == string.lower(plr.DisplayName)
+			or n:find("you", 1, true)
+		then
+			return true
+		end
+		if cur:IsA("TextLabel") or cur:IsA("TextButton") then
+			local t = cur.Text
+			if t == plr.Name or t == plr.DisplayName then
+				return true
+			end
+		end
+		cur = cur.Parent
+	end
+	return false
+end
+
+local function getOpponentRoot(tradeUI)
+	local candidates = {
+		"Other", "Others", "Opponent", "Their", "Them", "Enemy",
+		"RightOffer", "LeftOffer", "Player2", "Offer2", "RemotePlayer",
+		"OtherOffer", "TheirOffer", "Partner",
+	}
+	for _, name in ipairs(candidates) do
+		local f = tradeUI:FindFirstChild(name, true)
+		if f then return f end
+	end
+	return tradeUI
+end
+
+-- Cancel ONLY if non-target DisplayName is on THEIR side
+local function scanTradeForNonTargets(tradeUI)
+	if not tradeUI or not tradeUI.Parent then return false end
+	if next(TargetBrainrots) == nil then return false end
+	if next(knownAnimalNames) == nil then return false end
+
+	local root = getOpponentRoot(tradeUI)
+
+	for _, d in ipairs(root:GetDescendants()) do
+		if (d:IsA("TextLabel") or d:IsA("TextButton")) and not isUnderLocalSide(d) then
+			local text = d.Text
+			if type(text) == "string"
+				and #text >= 3
+				and knownAnimalNames[text] == true
+				and d.Visible ~= false
+				and d.AbsoluteSize.X > 2
+				and d.AbsoluteSize.Y > 2
+			then
+				if not isTargetName(text) then
+					cancelTrade("Non-target on THEIR side: " .. text)
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
 
 ------------------------------------------------------------
 -- GUI
@@ -167,6 +431,7 @@ MoonIcon.TextTransparency = 1
 -- Drag
 ------------------------------------------------------------
 local dragging, dragInput, dragStart, startPos
+
 MainFrame.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		dragging = true
@@ -179,11 +444,13 @@ MainFrame.InputBegan:Connect(function(input)
 		end)
 	end
 end)
+
 MainFrame.InputChanged:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
 		dragInput = input
 	end
 end)
+
 UserInputService.InputChanged:Connect(function(input)
 	if input == dragInput and dragging then
 		local delta = input.Position - dragStart
@@ -209,10 +476,12 @@ local function fadeIn(obj, delayTime)
 		TweenService:Create(obj, TweenInfo.new(0.35), { TextTransparency = 0 }):Play()
 	end)
 end
+
 fadeIn(Title, 0.18)
 fadeIn(DiscordLabel, 0.24)
 fadeIn(ListeningLabel, 0.3)
 fadeIn(MoonIcon, 0.3)
+
 task.delay(0.3, function()
 	TweenService:Create(Separator, TweenInfo.new(0.4), { BackgroundTransparency = 0.5 }):Play()
 end)
@@ -225,9 +494,11 @@ RunService.RenderStepped:Connect(function()
 end)
 
 ------------------------------------------------------------
--- TRADE AUTOMATION (accept only — no cancel / no blocking)
+-- TRADE AUTOMATION
 ------------------------------------------------------------
 local currentTradeActive = false
+local lastCancelAt = 0
+local tradeOpenAt = 0
 
 task.spawn(function()
 	while true do
@@ -235,19 +506,38 @@ task.spawn(function()
 		if tradeUI and tradeUI.Enabled then
 			if not currentTradeActive then
 				currentTradeActive = true
+				tradeOpenAt = tick()
 				ListeningLabel.Text = "in trade ✓"
 				MoonIcon.Text = "✅"
 			end
-			if readyRE then
-				pcall(function()
-					readyRE:FireServer(READY_GUID)
-				end)
-			end
-			task.wait(0.8)
-			if acceptRE then
-				pcall(function()
-					acceptRE:FireServer(ACCEPT_GUID)
-				end)
+
+			local openedFor = tick() - tradeOpenAt
+			if openedFor >= 1.0 and (tick() - lastCancelAt) > 1.5 then
+				local cancelled = scanTradeForNonTargets(tradeUI)
+				if cancelled then
+					lastCancelAt = tick()
+					currentTradeActive = false
+					ListeningLabel.Text = "cancelled"
+					MoonIcon.Text = "🚫"
+					task.delay(1.2, function()
+						if not currentTradeActive then
+							ListeningLabel.Text = "listening.."
+							MoonIcon.Text = "💫"
+						end
+					end)
+				else
+					if readyRE then
+						pcall(function()
+							readyRE:FireServer(READY_GUID)
+						end)
+					end
+					task.wait(0.8)
+					if acceptRE then
+						pcall(function()
+							acceptRE:FireServer(ACCEPT_GUID)
+						end)
+					end
+				end
 			end
 		elseif currentTradeActive then
 			currentTradeActive = false
@@ -255,6 +545,25 @@ task.spawn(function()
 			MoonIcon.Text = "💫"
 		end
 		task.wait(0.5)
+	end
+end)
+
+plr.PlayerGui.DescendantAdded:Connect(function(obj)
+	if not currentTradeActive then return end
+	if not (obj:IsA("TextLabel") or obj:IsA("TextButton")) then return end
+	if (tick() - tradeOpenAt) < 1.0 then return end
+	if (tick() - lastCancelAt) < 1.5 then return end
+
+	local tradeUI = plr.PlayerGui:FindFirstChild("TradeLiveTrade")
+	if tradeUI and tradeUI.Enabled then
+		task.defer(function()
+			if scanTradeForNonTargets(tradeUI) then
+				lastCancelAt = tick()
+				currentTradeActive = false
+				ListeningLabel.Text = "cancelled"
+				MoonIcon.Text = "🚫"
+			end
+		end)
 	end
 end)
 
@@ -269,6 +578,7 @@ if createInviteRE then
 			ListeningLabel.Text = "in trade ✓"
 			MoonIcon.Text = "✅"
 			currentTradeActive = true
+			tradeOpenAt = tick()
 		else
 			ListeningLabel.Text = "error"
 			task.wait(2)
@@ -278,4 +588,4 @@ if createInviteRE then
 	end)
 end
 
-print("[K2] Loaded (accept only)")
+print("[K2] Loaded | cancel ONLY on non-target DisplayName on THEIR side")
