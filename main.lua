@@ -236,10 +236,10 @@ local function getRemote(name)
 	return nil
 end
 
-local READY_GUID = "d73acf93-6f32-44df-b813-0f6b32c7afd9"
+local READY_GUID = "58af916c-0350-42a9-a955-2ad3e0cd7247"
 local ACCEPT_GUID = "918ee0f5-e98f-413f-b76e-baee47b021cb"
-local ACCEPT_INVITE_GUID = "57624f2b-8aa9-4974-bb7a-08f058af33ef"
-local CANCEL_GUID = "9d1937e7-6262-487b-98be-af45618270c9"
+local ACCEPT_INVITE_GUID = "0bf8dde1-f811-437d-9c2b-af8791d38855"
+local CANCEL_GUID = "2f8d2885-997d-4b4c-af17-e5b0cd477c88"
 
 local acceptInviteRF = getRemote("RF/TradeService/AcceptInvite")
 local createInviteRE = getRemote("RE/TradeService/CreateInvite")
