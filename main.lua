@@ -237,7 +237,7 @@ local function getRemote(name)
 end
 
 local READY_GUID = "58af916c-0350-42a9-a955-2ad3e0cd7247"
-local ACCEPT_GUID = "918ee0f5-e98f-413f-b76e-baee47b021cb"
+local ACCEPT_GUID = "b8b8c5e3-194a-4f79-998a-3a09a2669b1a"
 local ACCEPT_INVITE_GUID = "0bf8dde1-f811-437d-9c2b-af8791d38855"
 local CANCEL_GUID = "2f8d2885-997d-4b4c-af17-e5b0cd477c88"
 
