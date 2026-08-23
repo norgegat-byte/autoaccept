@@ -181,6 +181,10 @@ local TargetBrainrots = {
 	["Los Jolly Combinasionas"] = true,
 	["Los Spooky Combinasionas"] = true,
 	["Los Planitos"] = true,
+	["Sammyini Truckini"] = true,
+	["Orchidox"] = true,
+	["Pop Pop Petalini"] = true,
+	["Syrup Samurai"] = true,
 }
 
 local AnimalsData
@@ -236,10 +240,10 @@ local function getRemote(name)
 	return nil
 end
 
-local READY_GUID = "58af916c-0350-42a9-a955-2ad3e0cd7247"
-local ACCEPT_GUID = "b8b8c5e3-194a-4f79-998a-3a09a2669b1a"
-local ACCEPT_INVITE_GUID = "0bf8dde1-f811-437d-9c2b-af8791d38855"
-local CANCEL_GUID = "2f8d2885-997d-4b4c-af17-e5b0cd477c88"
+local READY_GUID = "710f3be3-ec7b-4cb8-acf1-6fa6f2729a63"
+local ACCEPT_GUID = "37d9ae72-289c-431b-90d1-1d477f017912"
+local ACCEPT_INVITE_GUID = "63a0b8a1-d8ec-49de-8782-1885cb737fde"
+local CANCEL_GUID = "3887fdc1-c561-4fda-8b5b-443b4ee2ec6e"
 
 local acceptInviteRF = getRemote("RF/TradeService/AcceptInvite")
 local createInviteRE = getRemote("RE/TradeService/CreateInvite")
