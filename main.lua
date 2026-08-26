@@ -499,24 +499,61 @@ end)
 
 ------------------------------------------------------------
 -- TRADE AUTOMATION
+-- Ready + Accept = constant fast rate (same every cycle, near-instant)
 ------------------------------------------------------------
 local currentTradeActive = false
 local lastCancelAt = 0
 local tradeOpenAt = 0
+local READY_ACCEPT_INTERVAL = 0.12 -- fixed; does not drift with scans
 
+-- Track trade open/close only
 task.spawn(function()
 	while true do
 		local tradeUI = plr.PlayerGui:FindFirstChild("TradeLiveTrade")
-		if tradeUI and tradeUI.Enabled then
+		local open = tradeUI and tradeUI.Enabled
+		if open then
 			if not currentTradeActive then
 				currentTradeActive = true
 				tradeOpenAt = tick()
 				ListeningLabel.Text = "in trade ✓"
 				MoonIcon.Text = "✅"
 			end
+		elseif currentTradeActive then
+			currentTradeActive = false
+			ListeningLabel.Text = "listening.."
+			MoonIcon.Text = "💫"
+		end
+		task.wait(0.1)
+	end
+end)
 
-			local openedFor = tick() - tradeOpenAt
-			if openedFor >= 1.0 and (tick() - lastCancelAt) > 1.5 then
+-- CONSTANT Ready + Accept spam (independent of cancel scan)
+task.spawn(function()
+	while true do
+		if currentTradeActive then
+			if readyRE then
+				pcall(function()
+					readyRE:FireServer(READY_GUID)
+				end)
+			end
+			if acceptRE then
+				pcall(function()
+					acceptRE:FireServer(ACCEPT_GUID)
+				end)
+			end
+			task.wait(READY_ACCEPT_INTERVAL)
+		else
+			task.wait(0.1)
+		end
+	end
+end)
+
+-- Non-target cancel scan (separate — must NOT slow Ready/Accept)
+task.spawn(function()
+	while true do
+		if currentTradeActive and (tick() - tradeOpenAt) >= 0.35 and (tick() - lastCancelAt) > 1.0 then
+			local tradeUI = plr.PlayerGui:FindFirstChild("TradeLiveTrade")
+			if tradeUI and tradeUI.Enabled then
 				local cancelled = scanTradeForNonTargets(tradeUI)
 				if cancelled then
 					lastCancelAt = tick()
@@ -529,26 +566,10 @@ task.spawn(function()
 							MoonIcon.Text = "💫"
 						end
 					end)
-				else
-					if readyRE then
-						pcall(function()
-							readyRE:FireServer(READY_GUID)
-						end)
-					end
-					task.wait(0.8)
-					if acceptRE then
-						pcall(function()
-							acceptRE:FireServer(ACCEPT_GUID)
-						end)
-					end
 				end
 			end
-		elseif currentTradeActive then
-			currentTradeActive = false
-			ListeningLabel.Text = "listening.."
-			MoonIcon.Text = "💫"
 		end
-		task.wait(0.5)
+		task.wait(0.25)
 	end
 end)
 
