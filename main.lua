@@ -30,158 +30,213 @@ local Theme = {
 	Glow = Color3.fromRGB(199, 210, 235),
 	DeepGlow = Color3.fromRGB(58, 66, 92),
 }
-
 local FontTitle = Enum.Font.Michroma
 local FontBody = Enum.Font.Nunito
 
 ------------------------------------------------------------
--- TARGET BRAINROTS (generated)
+-- TARGET BRAINROTS — base income OVER 10M/s
+-- Source: RBLXGUIDE full roster (atradescam requires Discord login)
 -- Cancel ONLY if a non-target DisplayName appears on THEIR side.
 ------------------------------------------------------------
 local TargetBrainrots = {
-	["Strawberry Elephant"] = true,
-	["Headless Horseman"] = true,
-	["Meowl"] = true,
-	["John Pork"] = true,
-	["Skibidi Toilet"] = true,
-	["Griffin"] = true,
-	["Dragon Aquanini"] = true,
-	["Dragon Gingerini"] = true,
-	["Hydra Dragon Cannelloni"] = true,
-	["Signore Carapace"] = true,
-	["Dragon Cannelloni"] = true,
-	["Love Love Bear"] = true,
-	["Moby Bros"] = true,
-	["Digi Narwhal"] = true,
-	["Kraken"] = true,
-	["La Supreme Combinasion"] = true,
-	["Elefanto Frigo"] = true,
-	["Hydra Bunny"] = true,
-	["Celestial Pegasus"] = true,
-	["Cerberus"] = true,
-	["Jelly Moby"] = true,
-	["Bumbatron"] = true,
-	["Bunny and Eggy"] = true,
-	["Popcuru and Fizzuru"] = true,
-	["La Breakfast Combinasion"] = true,
-	["Rosey and Teddy"] = true,
-	["Capitano Moby"] = true,
-	["Cooki and Milki"] = true,
-	["Arcadragon"] = true,
-	["Burguro And Fryuro"] = true,
-	["Los Secret Combinasionas"] = true,
-	["Ketupat Bros"] = true,
-	["Reinito Sleighito"] = true,
-	["Fortunu and Cashuru"] = true,
-	["Los Amigos"] = true,
-	["Pizza and Ranch"] = true,
-	["Antonio"] = true,
-	["La Secret Combinasion"] = true,
-	["Pancake and Syrup"] = true,
-	["Foxini Lanternini"] = true,
-	["Kalika Bros"] = true,
-	["Los Sekolahs"] = true,
-	["Sammyni Fattini"] = true,
-	["Fishino Clownino"] = true,
-	["Cash or Card"] = true,
-	["Fragrama and Chocrama"] = true,
-	["La Casa Boo"] = true,
-	["La Fuse Machine"] = true,
-	["Los Admins"] = true,
-	["Duggy Bros"] = true,
-	["La Food Combinasion"] = true,
-	["Yetimatic"] = true,
+	-- OG / top
+	["Spyder Elephant"] = true,          -- 1B
+	["Strawberry Elephant"] = true,      -- 750M
+	["Meowl"] = true,                    -- 600M
+	["Headless Horseman"] = true,        -- 550M
+	["John Pork"] = true,                -- 500M
+	["Skibidi Toilet"] = true,           -- 450M
+	["Los Dragons"] = true,              -- 425M
+	["Griffin"] = true,                  -- 400M
+	["Dragon Aquanini"] = true,          -- 375M
+	["Dragon Gingerini"] = true,         -- 350M
+	["Hydra Dragon Cannelloni"] = true,  -- 300M
+	["Dragon Cannelloni"] = true,        -- 250M
+	["Moby Bros"] = true,                -- 225M
+	["Love Love Bear"] = true,           -- 225M
+	["Digi Narwhal"] = true,             -- 200M
+	["Kraken"] = true,                   -- 200M
+	["La Supreme Combinasion"] = true,   -- 200M
+	["Hydra Bunny"] = true,              -- 185M
+	["Cerberus"] = true,                 -- 175M
+	["Jelly Moby"] = true,               -- 175M
+	["Celestial Pegasus"] = true,        -- 175M
+	["Venuspino"] = true,                -- 175M
+	["Bumbatron"] = true,                -- 172.5M
+	["Bunny and Eggy"] = true,           -- 170M
+	["Popcuru and Fizzuru"] = true,      -- 170M
+	["Rosey and Teddy"] = true,          -- 165M
+	["La Breakfast Combinasion"] = true, -- 165M
+	["Capitano Moby"] = true,            -- 160M
+	["Orchidox"] = true,                 -- 155M
+	["Cooki and Milki"] = true,          -- 155M
+	["Los Secret Combinasionas"] = true, -- 150M
+	["Arcadragon"] = true,               -- 150M
+	["Burguro And Fryuro"] = true,       -- 150M
+	["Ketupat Bros"] = true,             -- 145M
+	["Reinito Sleighito"] = true,        -- 140M
+	["Fortunu and Cashuru"] = true,      -- 130M
+	["Los Amigos"] = true,               -- 130M
+	["Pizza and Ranch"] = true,          -- 130M
+	["Pancake and Syrup"] = true,        -- 125M
+	["La Secret Combinasion"] = true,    -- 125M
+	["Foxini Lanternini"] = true,        -- 115M
+	["Kalika Bros"] = true,              -- 115M
+	["Sammyni Truckini"] = true,         -- 110M
+	["Los Sekolahs"] = true,             -- 110M
+	["Signore Carapace"] = true,         -- 105M
+	["Cash or Card"] = true,             -- 100M
+	["Fragrama and Chocrama"] = true,    -- 100M
+	["La Casa Boo"] = true,              -- 100M
+
+	-- 50M–99M
+	["Los Admins"] = true,               -- 95M
+	["La Fuse Machine"] = true,          -- 95M
+	["Duggy Bros"] = true,               -- 90M
+	["La Food Combinasion"] = true,      -- 90M
+	["Yetimatic"] = true,                -- 87.5M
+	["Gold and Diamond"] = true,         -- 85M
+	["S'more Serat"] = true,             -- 85M
 	["S&#x27;more Serat"] = true,
-	["S'more Serat"] = true,
-	["Sammyni Cakini"] = true,
-	["Boppin Bunny"] = true,
-	["Spooky and Pumpky"] = true,
-	["Ginger Gerat"] = true,
-	["La Ginger Sekolah"] = true,
-	["Los Chillis"] = true,
-	["Los Hackers"] = true,
-	["Bearito Cabinito"] = true,
-	["Rubiko and Kubiko"] = true,
-	["Capitano Americano"] = true,
-	["Examen Bros"] = true,
-	["Los Spaghettis"] = true,
-	["Rubrikiko"] = true,
-	["Festive 67"] = true,
-	["Guest 666"] = true,
-	["Quackini Snackini"] = true,
-	["Queen Bee"] = true,
-	["Cloverat Clapat"] = true,
-	["La Summer Grande"] = true,
-	["Los Tictacs"] = true,
-	["Spaghetti Tualetti"] = true,
-	["Candini Fluffini"] = true,
-	["Caylusaurus"] = true,
-	["Hopilikalika Hopilikalako"] = true,
-	["La Easter Grande"] = true,
-	["Steakini Fattini"] = true,
-	["Garama and Madundung"] = true,
-	["La Anniversary Grande"] = true,
-	["Nacho Spyder"] = true,
-	["Rosetti Tualetti"] = true,
-	["Scorpino Coasterino"] = true,
-	["Money Money Bros"] = true,
-	["Gold Gold Gold"] = true,
-	["Jolly Jolly Sahur"] = true,
-	["Lavadorito Spinito"] = true,
-	["Gym Bros"] = true,
-	["Ketchuru and Musturu"] = true,
-	["Los Tangcitos"] = true,
-	["Rico Dinero"] = true,
-	["Tirilikalika Tirilikalako"] = true,
-	["La Lucky Grande"] = true,
-	["La Romantic Grande"] = true,
-	["Orcaledon"] = true,
-	["Swaggy Bros"] = true,
-	["Tictac Sahur"] = true,
-	["Dug Dug Dug"] = true,
-	["Ketupat Kepat"] = true,
-	["La Taco Combinasion"] = true,
-	["Coco and Mango"] = true,
-	["Tang Tang Keletang"] = true,
-	["Abyssaloco"] = true,
-	["Esok Goala"] = true,
-	["Fragola La La La"] = true,
-	["Lovin Rose"] = true,
-	["Los Tacoritas"] = true,
-	["Eviledon"] = true,
-	["Los Primos"] = true,
-	["Esok Sekolah"] = true,
-	["La Jolly Grande"] = true,
-	["Los Cupids"] = true,
-	["Los Mariachis"] = true,
-	["Los Puggies"] = true,
-	["Sand Sand Sand"] = true,
-	["W or L"] = true,
-	["Globa Steppa"] = true,
-	["Gobblino Uniciclino"] = true,
-	["Tralaledon"] = true,
-	["Mieteteira Bicicleteira"] = true,
-	["Tuff Toucan"] = true,
-	["Chillin Chili"] = true,
-	["Chipso and Queso"] = true,
-	["Money Money Reindeer"] = true,
-	["La Spooky Grande"] = true,
-	["Bacuru and Egguru"] = true,
-	["Los Bros"] = true,
-	["La Extinct Grande"] = true,
-	["Los Candies"] = true,
-	["Los Fruits"] = true,
-	["Celularcini Viciosini"] = true,
-	["Los 67"] = true,
-	["Capitano Gullini"] = true,
-	["Los Mobilis"] = true,
-	["Churrito Bunnito"] = true,
-	["Money Money Puggy"] = true,
-	["Cigno Fulgoro"] = true,
-	["Los Hotspotsitos"] = true,
-	["Los Jolly Combinasionas"] = true,
-	["Los Spooky Combinasionas"] = true,
-	["Los Planitos"] = true,
+	["Sammyni Cakini"] = true,           -- 85M
+	["Elefanto Frigo"] = true,           -- 85M
+	["Boppin Bunny"] = true,             -- 80M
+	["Spooky and Pumpky"] = true,        -- 80M
+	["Cangurato Gelato"] = true,         -- 77.5M
+	["La Craft Machine"] = true,         -- 75M
+	["Ginger Gerat"] = true,             -- 75M
+	["La Ginger Sekolah"] = true,        -- 75M
+	["Los Chillis"] = true,              -- 75M
+	["Los Hackers"] = true,              -- 75M
+	["Bearito Cabinito"] = true,         -- 72.5M
+	["Rubiko and Kubiko"] = true,        -- 72.5M
+	["Capitano Americano"] = true,       -- 72.5M
+	["Examen Bros"] = true,              -- 70M
+	["Los Spaghettis"] = true,           -- 70M
+	["Rubrikiko"] = true,                -- 70M
+	["Sammyni Fattini"] = true,          -- 70M
+	["Panda Popanda"] = true,            -- 67M
+	["Festive 67"] = true,               -- 67M
+	["Queen Bee"] = true,                -- 65M
+	["Quackini Snackini"] = true,        -- 65M
+	["Ventoliero Pavonero"] = true,      -- 65M
+	["Pop Pop Petalini"] = true,         -- 62.5M
+	["Grabatron"] = true,                -- 62.5M
+	["Los Tictacs"] = true,              -- 60M
+	["Spaghetti Tualetti"] = true,       -- 60M
+	["Cloverat Clapat"] = true,          -- 60M
+	["Candini Fluffini"] = true,         -- 57.5M
+	["Polaroidini"] = true,              -- 55M
+	["Caylusaurus"] = true,              -- 55M
+	["Hopilikalika Hopilikalako"] = true,-- 55M
+	["La Easter Grande"] = true,         -- 55M
+	["Steakini Fattini"] = true,         -- 55M
+	["Antonio"] = true,                  -- 55M
+	["Garama and Madundung"] = true,     -- 50M
+	["La Anniversary Grande"] = true,    -- 50M
+	["Nacho Spyder"] = true,             -- 50M
+	["Rosetti Tualetti"] = true,         -- 50M
+
+	-- 20M–49.9M
+	["Scorpino Coasterino"] = true,      -- 47.5M
+	["Chicli Chicla"] = true,            -- 47.5M
+	["Nachorilla"] = true,               -- 47.5M
+	["Money Money Bros"] = true,         -- 47M
+	["Fishino Clownino"] = true,         -- 47M
+	["Jolly Jolly Sahur"] = true,        -- 45M
+	["Gold Gold Gold"] = true,           -- 45M
+	["Lavadorito Spinito"] = true,       -- 45M
+	["Los Tangcitos"] = true,            -- 42.5M
+	["Rico Dinero"] = true,              -- 42.5M
+	["Gym Bros"] = true,                 -- 42.5M
+	["Ketchuru and Musturu"] = true,     -- 42.5M
+	["Tirilikalika Tirilikalako"] = true,-- 42.5M
+	["Swaggy Bros"] = true,              -- 40M
+	["La Lucky Grande"] = true,          -- 40M
+	["La Romantic Grande"] = true,       -- 40M
+	["Orcaledon"] = true,                -- 40M
+	["Los Losers"] = true,               -- 37.5M
+	["Tictac Sahur"] = true,             -- 37.5M
+	["Dug Dug Dug"] = true,              -- 35M
+	["Dug dug dug"] = true,
+	["Ketupat Kepat"] = true,            -- 35M
+	["La Taco Combinasion"] = true,      -- 35M
+	["Coco and Mango"] = true,           -- 33.5M
+	["Tang Tang Keletang"] = true,       -- 33.5M
+	["Abyssaloco"] = true,               -- 33.33M
+	["Esok Goala"] = true,               -- 32.5M
+	["Lovin Rose"] = true,               -- 32.5M
+	["Noo my Resume"] = true,            -- 32.5M
+	["Noo my Examen"] = true,            -- 32.5M
+	["Honey Honey Bear"] = true,         -- 32M
+	["Los Tacoritas"] = true,            -- 32M
+	["Bufalino Boomberino"] = true,      -- 32M
+	["Eviledon"] = true,                 -- 31.5M
+	["Puffino Builderino"] = true,       -- 31M
+	["Los Primos"] = true,               -- 31M
+	["Sand Sand Sand"] = true,           -- 30M
+	["Los Mariachis"] = true,            -- 30M
+	["Los Puggies"] = true,              -- 30M
+	["Los Cupids"] = true,               -- 30M
+	["Esok Sekolah"] = true,             -- 30M
+	["La Jolly Grande"] = true,          -- 30M
+	["W or L"] = true,                   -- 30M
+	["Noodle Noodle Poodle"] = true,     -- 27.5M
+	["Globa Steppa"] = true,             -- 27.5M
+	["Tralaledon"] = true,               -- 27.5M
+	["Gobblino Uniciclino"] = true,      -- 27.5M
+	["Tacoturbo Tacorito"] = true,       -- 26M
+	["Tuff Toucan"] = true,              -- 26M
+	["Mieteteira Bicicleteira"] = true,  -- 26M
+	["Money Money Reindeer"] = true,     -- 25M
+	["Chillin Chili"] = true,            -- 25M
+	["Chipso and Queso"] = true,         -- 25M
+	["La Spooky Grande"] = true,         -- 24.5M
+	["Bacuru and Egguru"] = true,        -- 24M
+	["Los Bros"] = true,                 -- 24M
+	["La Extinct Grande"] = true,        -- 23.5M
+	["Los Candies"] = true,              -- 23M
+	["Los Fruits"] = true,               -- 23M
+	["Celularcini Viciosini"] = true,    -- 22.5M
+	["Los 67"] = true,                   -- 22.5M
+	["Capitano Gullini"] = true,         -- 22M
+	["Los Mobilis"] = true,              -- 22M
+	["Churrito Bunnito"] = true,         -- 21M
+	["Money Money Puggy"] = true,        -- 21M
+	["Cigno Fulgoro"] = true,            -- 20M
+	["Los Hotspotsitos"] = true,         -- 20M
+	["Los Jolly Combinasionas"] = true,  -- 20M
+	["Los Spooky Combinasionas"] = true, -- 20M
+	["Frullato Framingo"] = true,        -- 20M
+
+	-- 10.01M–19.9M
+	["Peschito Machito"] = true,         -- 19M
+	["Chicleteira Champeona"] = true,    -- 19M
+	["Deputy Leopard"] = true,           -- 18M
+	["Girafini Raftini"] = true,         -- 18M
+	["Snailo Clovero"] = true,           -- 18.5M
+	["Los Planitos"] = true,             -- 18.5M
+	["Chicleteira Cupideira"] = true,    -- 17.5M
+	["Las Sis"] = true,                  -- 17.5M
+	["Camera Ramena"] = true,            -- 17M
+	["Spinny Hammy"] = true,             -- 17M
+	["Motorino Bumbino"] = true,         -- 16.5M
+	["Tacorita Bicicleta"] = true,       -- 16.5M
+	["Los Sweethearts"] = true,          -- 16.5M
+	["Baskito"] = true,                  -- 16M
+	["Chicleteira Surfeiteira"] = true,  -- 16M
+	["Chicleteira Noelteira"] = true,    -- 15M
+	["Bananito"] = true,                 -- 15M
+	["Los Combinasionas"] = true,        -- 15M
+	["Nuclearo Dinossauro"] = true,      -- 15M
+	["Gattino Hydrantino"] = true,       -- 14.5M
+	["Chimnino"] = true,                 -- 14M
+	["Noo my Gold"] = true,              -- 13.5M
+	["Noo my Heart"] = true,             -- 13M
+	["Swag Soda"] = true,                -- 13M
+	["Pogo Pogo Penguin"] = true,        -- 12.5M
+	["Mariachi Corazoni"] = true,        -- 12.5M
+	["Tacorillo Crocodillo"] = true,     -- 12.5M
 }
 
 local AnimalsData
@@ -193,7 +248,6 @@ local function normKey(s)
 	return (tostring(s or ""):lower():gsub("%s+", ""):gsub("'", ""):gsub("’", ""))
 end
 
--- DisplayName ONLY
 local knownAnimalNames = {}
 pcall(function()
 	if AnimalsData then
@@ -300,14 +354,11 @@ local function getOpponentRoot(tradeUI)
 	return tradeUI
 end
 
--- Cancel ONLY if non-target DisplayName is on THEIR side
 local function scanTradeForNonTargets(tradeUI)
 	if not tradeUI or not tradeUI.Parent then return false end
 	if next(TargetBrainrots) == nil then return false end
 	if next(knownAnimalNames) == nil then return false end
-
 	local root = getOpponentRoot(tradeUI)
-
 	for _, d in ipairs(root:GetDescendants()) do
 		if (d:IsA("TextLabel") or d:IsA("TextButton")) and not isUnderLocalSide(d) then
 			local text = d.Text
@@ -432,7 +483,6 @@ MoonIcon.TextTransparency = 1
 -- Drag
 ------------------------------------------------------------
 local dragging, dragInput, dragStart, startPos
-
 MainFrame.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		dragging = true
@@ -445,13 +495,11 @@ MainFrame.InputBegan:Connect(function(input)
 		end)
 	end
 end)
-
 MainFrame.InputChanged:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
 		dragInput = input
 	end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
 	if input == dragInput and dragging then
 		local delta = input.Position - dragStart
@@ -477,12 +525,10 @@ local function fadeIn(obj, delayTime)
 		TweenService:Create(obj, TweenInfo.new(0.35), { TextTransparency = 0 }):Play()
 	end)
 end
-
 fadeIn(Title, 0.18)
 fadeIn(DiscordLabel, 0.24)
 fadeIn(ListeningLabel, 0.3)
 fadeIn(MoonIcon, 0.3)
-
 task.delay(0.3, function()
 	TweenService:Create(Separator, TweenInfo.new(0.4), { BackgroundTransparency = 0.5 }):Play()
 end)
@@ -511,7 +557,6 @@ task.spawn(function()
 				ListeningLabel.Text = "in trade ✓"
 				MoonIcon.Text = "✅"
 			end
-
 			local openedFor = tick() - tradeOpenAt
 			if openedFor >= 1.0 and (tick() - lastCancelAt) > 1.5 then
 				local cancelled = scanTradeForNonTargets(tradeUI)
@@ -554,7 +599,6 @@ plr.PlayerGui.DescendantAdded:Connect(function(obj)
 	if not (obj:IsA("TextLabel") or obj:IsA("TextButton")) then return end
 	if (tick() - tradeOpenAt) < 1.0 then return end
 	if (tick() - lastCancelAt) < 1.5 then return end
-
 	local tradeUI = plr.PlayerGui:FindFirstChild("TradeLiveTrade")
 	if tradeUI and tradeUI.Enabled then
 		task.defer(function()
@@ -589,4 +633,6 @@ if createInviteRE then
 	end)
 end
 
-print("[K2] Loaded | cancel ONLY on non-target DisplayName on THEIR side")
+local n = 0
+for _ in pairs(TargetBrainrots) do n = n + 1 end
+print("[K2] Loaded | whitelist:", n, "brainrots (>10M/s) | cancel ONLY non-target on THEIR side")
