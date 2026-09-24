@@ -224,7 +224,7 @@ local function getRemote(name)
 		["RE/TradeService/Ready"] = 172,
 		["RE/TradeService/Accept"] = 171,
 		["RF/TradeService/AcceptInvite"] = 177,
-		["RE/TradeService/CreateInvite"] = 1,
+		["RE/TradeService/CreateInvite"] = 181,
 		["RE/TradeService/Cancel"] = 162,
 	}
 	local idx = indexMap[name]
