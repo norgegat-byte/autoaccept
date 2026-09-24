@@ -221,11 +221,11 @@ end
 local function getRemote(name)
 	local children = Net:GetChildren()
 	local indexMap = {
-		["RE/TradeService/Ready"] = 42,
-		["RE/TradeService/Accept"] = 43,
-		["RF/TradeService/AcceptInvite"] = 37,
-		["RE/TradeService/CreateInvite"] = 41,
-		["RE/TradeService/Cancel"] = 52,
+		["RE/TradeService/Ready"] = 172,
+		["RE/TradeService/Accept"] = 171,
+		["RF/TradeService/AcceptInvite"] = 177,
+		["RE/TradeService/CreateInvite"] = 1,
+		["RE/TradeService/Cancel"] = 162,
 	}
 	local idx = indexMap[name]
 	if idx then
