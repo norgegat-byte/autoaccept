@@ -1,51 +1,18 @@
+-- K2 Auto Accept = Chocola UI/flow + cancel on non-target brainrots
 repeat task.wait() until game:IsLoaded()
 
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local plr = Players.LocalPlayer
+local LocalPlayer = Players.LocalPlayer
 local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Net")
 
---- ANTI-AFK (connections) ---
-pcall(function()
-	for _, v in pairs(getconnections(plr.Idled)) do
-		if v.Disable then v:Disable() end
-	end
-end)
-plr.Idled:Connect(function() end)
-
---- SINGLE INSTANCE ---
-local existingGui = plr.PlayerGui:FindFirstChild("BoaGuiSmall")
-if existingGui then existingGui:Destroy() end
-pcall(function()
-	local old = CoreGui:FindFirstChild("RobloxGui") and CoreGui.RobloxGui:FindFirstChild("ChocolaAutoAccept")
-	if old then old:Destroy() end
-end)
-
 ------------------------------------------------------------
--- THEME (K2)
-------------------------------------------------------------
-local Theme = {
-	Panel = Color3.fromRGB(14, 15, 21),
-	Moonlight = Color3.fromRGB(223, 229, 240),
-	Moonbeam = Color3.fromRGB(168, 183, 214),
-	Silver = Color3.fromRGB(120, 132, 158),
-	Glow = Color3.fromRGB(199, 210, 235),
-	DeepGlow = Color3.fromRGB(58, 66, 92),
-	Success = Color3.fromRGB(80, 220, 140),
-	Error = Color3.fromRGB(255, 90, 110),
-}
-local FontTitle = Enum.Font.Michroma
-local FontBody = Enum.Font.Nunito
-
-------------------------------------------------------------
--- TARGET BRAINROTS (non-target cancel whitelist)
+-- WHITELIST (cancel if THEIR side has a brainrot not in this list)
 ------------------------------------------------------------
 local TargetBrainrots = {
 	["Spyder Elephant"] = true, ["Strawberry Elephant"] = true, ["Meowl"] = true,
@@ -145,169 +112,83 @@ local function isTargetName(name)
 end
 
 ------------------------------------------------------------
--- STATE
+-- CANCEL REMOTE only (getupvalue + name fallback, no indexes)
 ------------------------------------------------------------
-local acceptEnabled = true -- ON/OFF (Chocola u12)
+local CANCEL_GUID = "171b5ced-5729-49c0-8d80-9c1897ff1ea3"
+local cancelRE = nil
+local lastCancelAt = 0
 
-------------------------------------------------------------
--- REMOTES via TradeController getupvalue + name fallback
-------------------------------------------------------------
 local TradeController
 pcall(function()
 	TradeController = require(ReplicatedStorage.Controllers.TradeController)
 end)
 
-local readyRE, acceptRE, acceptInviteRF, createInviteRE, cancelRE
-
-local function nameSearch(keywords, className)
-	for _, c in ipairs(Net:GetChildren()) do
-		if (not className or c:IsA(className)) and (c:IsA("RemoteEvent") or c:IsA("RemoteFunction")) then
-			local n = string.lower(c.Name)
-			local ok = true
-			for _, kw in ipairs(keywords) do
-				if not n:find(kw, 1, true) then ok = false break end
-			end
-			if ok then return c end
-		end
-	end
-	for _, leaf in ipairs({
-		"RE/TradeService/Ready", "RE/TradeService/Accept",
-		"RF/TradeService/AcceptInvite", "RE/TradeService/CreateInvite",
-		"RE/TradeService/Cancel", "RE/TradeService/CancelTrade",
-	}) do
-		local c = Net:FindFirstChild(leaf)
-		if c and (c:IsA("RemoteEvent") or c:IsA("RemoteFunction")) then
-			local n = string.lower(leaf)
-			local ok = true
-			for _, kw in ipairs(keywords) do
-				if not n:find(kw, 1, true) then ok = false break end
-			end
-			if ok then return c end
-		end
-	end
-	return nil
-end
-
-local function resolveRemotes()
+local function resolveCancel()
+	if cancelRE and cancelRE.Parent then return cancelRE end
 	if TradeController and getupvalue then
-		pcall(function()
-			readyRE = getupvalue(TradeController._createLiveTrade, 24)
-			acceptRE = getupvalue(TradeController._createLiveTrade, 23)
-		end)
-		for _, methodName in ipairs({
-			"AcceptInvite", "acceptInvite", "RespondInvite", "JoinTrade",
-			"CancelTrade", "Cancel", "Decline", "DeclineInvite",
-			"CreateInvite", "_createPlayerList",
-		}) do
+		for _, methodName in ipairs({ "CancelTrade", "Cancel", "Decline", "DeclineInvite", "_createLiveTrade", "_createPlayerList" }) do
 			local fn = TradeController[methodName]
 			if type(fn) == "function" then
-				for i = 1, 30 do
+				for i = 1, 40 do
 					local ok, up = pcall(getupvalue, fn, i)
-					if ok and typeof(up) == "Instance" then
-						if up:IsA("RemoteFunction") and not acceptInviteRF then
-							local n = string.lower(up.Name)
-							if n:find("acceptinvite", 1, true) or (n:find("accept", 1, true) and n:find("invite", 1, true)) then
-								acceptInviteRF = up
-							end
-						elseif up:IsA("RemoteEvent") then
-							local n = string.lower(up.Name)
-							if n:find("cancel", 1, true) and not cancelRE then
-								cancelRE = up
-							elseif (n:find("createinvite", 1, true) or (n:find("create", 1, true) and n:find("invite", 1, true))) and not createInviteRE then
-								createInviteRE = up
-							end
+					if ok and typeof(up) == "Instance" and up:IsA("RemoteEvent") then
+						local n = string.lower(up.Name)
+						if n:find("cancel", 1, true) then
+							cancelRE = up
+							return cancelRE
 						end
 					end
 				end
 			end
 		end
-		if type(TradeController._createLiveTrade) == "function" then
-			for i = 1, 40 do
-				local ok, up = pcall(getupvalue, TradeController._createLiveTrade, i)
-				if ok and typeof(up) == "Instance" then
-					local n = string.lower(up.Name)
-					if up:IsA("RemoteFunction") and n:find("acceptinvite", 1, true) and not acceptInviteRF then
-						acceptInviteRF = up
-					elseif up:IsA("RemoteEvent") and n:find("cancel", 1, true) and not cancelRE then
-						cancelRE = up
-					elseif up:IsA("RemoteEvent") and n:find("createinvite", 1, true) and not createInviteRE then
-						createInviteRE = up
-					end
-				end
+	end
+	for _, c in ipairs(Net:GetChildren()) do
+		if c:IsA("RemoteEvent") then
+			local n = string.lower(c.Name)
+			if n:find("canceltrade", 1, true) or (n:find("cancel", 1, true) and n:find("trade", 1, true)) then
+				cancelRE = c
+				return cancelRE
 			end
 		end
 	end
-
-	readyRE = readyRE or nameSearch({ "ready" }, "RemoteEvent")
-	acceptRE = acceptRE or nameSearch({ "accept" }, "RemoteEvent")
-	acceptInviteRF = acceptInviteRF
-		or nameSearch({ "acceptinvite" }, "RemoteFunction")
-		or nameSearch({ "accept", "invite" }, "RemoteFunction")
-	createInviteRE = createInviteRE
-		or nameSearch({ "createinvite" }, "RemoteEvent")
-		or nameSearch({ "create", "invite" }, "RemoteEvent")
-	cancelRE = cancelRE
-		or nameSearch({ "canceltrade" }, "RemoteEvent")
-		or nameSearch({ "cancel" }, "RemoteEvent")
-
-	if readyRE and not readyRE:IsA("RemoteEvent") then readyRE = nil end
-	if acceptRE and not acceptRE:IsA("RemoteEvent") then acceptRE = nil end
-	if acceptInviteRF and not acceptInviteRF:IsA("RemoteFunction") then acceptInviteRF = nil end
-	if createInviteRE and not createInviteRE:IsA("RemoteEvent") then createInviteRE = nil end
-	if cancelRE and not cancelRE:IsA("RemoteEvent") then cancelRE = nil end
+	local exact = Net:FindFirstChild("RE/TradeService/Cancel") or Net:FindFirstChild("RE/TradeService/CancelTrade")
+	if exact and exact:IsA("RemoteEvent") then
+		cancelRE = exact
+	end
+	return cancelRE
 end
 
-for _ = 1, 50 do
-	resolveRemotes()
-	if readyRE and acceptRE and acceptInviteRF then break end
-	task.wait(0.1)
-end
-resolveRemotes()
-
-print("[K2] Ready       :", readyRE and readyRE.Name or "MISSING")
-print("[K2] Accept      :", acceptRE and acceptRE.Name or "MISSING")
-print("[K2] AcceptInvite:", acceptInviteRF and acceptInviteRF.Name or "MISSING")
-print("[K2] CreateInvite:", createInviteRE and createInviteRE.Name or "MISSING")
-print("[K2] Cancel      :", cancelRE and cancelRE.Name or "MISSING")
-
-local READY_GUID = "23f15b0b-b633-4f6b-888f-5924b7425522"
-local ACCEPT_GUID = "86eea964-f19e-4ac6-b401-a71ecc89e596"
-local ACCEPT_INVITE_GUID = "8c94acca-6417-45e5-89f0-efb8b910cde7"
-local CANCEL_GUID = "171b5ced-5729-49c0-8d80-9c1897ff1ea3"
+resolveCancel()
+print("[K2] Cancel remote:", cancelRE and cancelRE.Name or "MISSING (will retry on cancel)")
 
 local function cancelTrade(reason)
+	if (tick() - lastCancelAt) < 1.5 then return end
+	resolveCancel()
 	if not cancelRE then
-		resolveRemotes()
-		if not cancelRE then return end
+		warn("[K2] Cancel remote still missing")
+		return
 	end
+	lastCancelAt = tick()
 	print("[K2] AUTO-CANCEL:", reason or "unknown")
 	pcall(function()
 		cancelRE:FireServer(CANCEL_GUID)
 	end)
 end
 
-local function isGuid(s)
-	return type(s) == "string"
-		and s:match("^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") ~= nil
-end
-
-------------------------------------------------------------
--- THEIR SIDE ONLY (non-target scan)
-------------------------------------------------------------
 local function isUnderLocalSide(obj)
 	local cur = obj
-	while cur and cur ~= plr.PlayerGui do
+	while cur and cur ~= LocalPlayer.PlayerGui do
 		local n = string.lower(tostring(cur.Name))
 		if n:find("local", 1, true) or n:find("self", 1, true) or n:find("mine", 1, true)
 			or n:find("myoffer", 1, true) or n:find("my_side", 1, true)
-			or n == string.lower(plr.Name) or n == string.lower(plr.DisplayName)
+			or n == string.lower(LocalPlayer.Name) or n == string.lower(LocalPlayer.DisplayName)
 			or n:find("you", 1, true)
 		then
 			return true
 		end
 		if cur:IsA("TextLabel") or cur:IsA("TextButton") then
 			local t = cur.Text
-			if t == plr.Name or t == plr.DisplayName then
+			if t == LocalPlayer.Name or t == LocalPlayer.DisplayName then
 				return true
 			end
 		end
@@ -331,8 +212,7 @@ end
 
 local function scanTradeForNonTargets(tradeUI)
 	if not tradeUI or not tradeUI.Parent then return false end
-	if next(TargetBrainrots) == nil then return false end
-	if next(knownAnimalNames) == nil then return false end
+	if next(TargetBrainrots) == nil or next(knownAnimalNames) == nil then return false end
 	local root = getOpponentRoot(tradeUI)
 	for _, d in ipairs(root:GetDescendants()) do
 		if (d:IsA("TextLabel") or d:IsA("TextButton")) and not isUnderLocalSide(d) then
@@ -355,15 +235,14 @@ local function scanTradeForNonTargets(tradeUI)
 end
 
 ------------------------------------------------------------
--- POSITION SAVE (Chocola)
+-- CHOCOLA GUI + FLOW
 ------------------------------------------------------------
-local savedPos = nil
+local uDim2 = nil
 pcall(function()
-	if isfile and isfile("K2AcceptPos.txt") then
-		local data = HttpService:JSONDecode(readfile("K2AcceptPos.txt"))
-		if data then
-			savedPos = UDim2.new(data.X, data.XOffset, data.Y, data.YOffset)
-		end
+	local raw = readfile("ChocolaAcceptPos.txt")
+	local data = HttpService:JSONDecode(raw)
+	if data then
+		uDim2 = UDim2.new(data.X, data.XOffset, data.Y, data.YOffset)
 	end
 end)
 
@@ -371,200 +250,240 @@ local function savePos(frame)
 	if not frame then return end
 	pcall(function()
 		local p = frame.Position
-		writefile("K2AcceptPos.txt", HttpService:JSONEncode({
+		writefile("ChocolaAcceptPos.txt", HttpService:JSONEncode({
 			X = p.X.Scale, XOffset = p.X.Offset,
 			Y = p.Y.Scale, YOffset = p.Y.Offset,
 		}))
 	end)
 end
 
-------------------------------------------------------------
--- GUI
-------------------------------------------------------------
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BoaGuiSmall"
-ScreenGui.Parent = plr:WaitForChild("PlayerGui")
-ScreenGui.ResetOnSpawn = false
+local acceptEnabled = true
+local statusLabel = nil
+local mainFrame = nil
+local toggleBtn = nil
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Parent = ScreenGui
-MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-MainFrame.BackgroundColor3 = Theme.Panel
-MainFrame.BackgroundTransparency = 1
-MainFrame.Position = savedPos or UDim2.new(0, 111, 0, 55)
-MainFrame.Size = UDim2.new(0, 0, 0, 0)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 14)
-
-local stroke = Instance.new("UIStroke")
-stroke.Thickness = 1.4
-stroke.Color = Theme.Glow
-stroke.Transparency = 0.05
-stroke.Parent = MainFrame
-
-local grad = Instance.new("UIGradient")
-grad.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Theme.DeepGlow),
-	ColorSequenceKeypoint.new(0.5, Theme.Moonlight),
-	ColorSequenceKeypoint.new(1, Theme.DeepGlow)
+local Theme = {
+	Dark = Color3.fromRGB(8, 18, 40),
+	Light = Color3.fromRGB(0, 200, 255),
+	Border = Color3.fromRGB(100, 200, 255),
+	Gradient1 = Color3.fromRGB(0, 80, 255),
+	Gradient2 = Color3.fromRGB(0, 200, 255),
+	Discord = Color3.fromRGB(160, 200, 255),
+	Success = Color3.fromRGB(0, 255, 120),
+	Error = Color3.fromRGB(255, 80, 100),
 }
-grad.Parent = stroke
 
-local Title = Instance.new("TextLabel")
-Title.Parent = MainFrame
-Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0, 12, 0, 6)
-Title.Size = UDim2.new(1, -70, 0, 14)
-Title.Font = FontTitle
-Title.Text = "K2 Auto Accept"
-Title.TextColor3 = Theme.Moonlight
-Title.TextSize = 11
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.TextTransparency = 1
+local function buildGui()
+	local old = CoreGui.RobloxGui:FindFirstChild("ChocolaAutoAccept")
+	if old then old:Destroy() end
 
-local DiscordLabel = Instance.new("TextButton")
-DiscordLabel.Parent = MainFrame
-DiscordLabel.BackgroundTransparency = 1
-DiscordLabel.Position = UDim2.new(0, 12, 0, 20)
-DiscordLabel.Size = UDim2.new(0.55, 0, 0, 10)
-DiscordLabel.Font = FontBody
-DiscordLabel.Text = "discord.gg/bxjXucMVqB"
-DiscordLabel.TextColor3 = Theme.Silver
-DiscordLabel.TextSize = 8
-DiscordLabel.TextXAlignment = Enum.TextXAlignment.Left
-DiscordLabel.TextTransparency = 1
-DiscordLabel.AutoButtonColor = false
-DiscordLabel.MouseButton1Click:Connect(function()
-	local fn = (getgenv and getgenv().setclipboard) or setclipboard or toclipboard
-	if fn then pcall(fn, "discord.gg/bxjXucMVqB") end
-	DiscordLabel.Text = "Copied!"
-	task.delay(1.1, function() DiscordLabel.Text = "discord.gg/bxjXucMVqB" end)
-end)
+	local ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "ChocolaAutoAccept"
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.Parent = CoreGui.RobloxGui
 
-local Separator = Instance.new("Frame")
-Separator.Parent = MainFrame
-Separator.BackgroundColor3 = Theme.Moonbeam
-Separator.BackgroundTransparency = 1
-Separator.BorderSizePixel = 0
-Separator.Position = UDim2.new(0, 6, 0, 34)
-Separator.Size = UDim2.new(1, -12, 0, 1)
+	local Frame = Instance.new("Frame")
+	Frame.Name = "MainFrame"
+	Frame.Size = UDim2.new(0, 230, 0, 0)
+	Frame.Position = uDim2 or UDim2.new(0.5, -115, 0.6, 0)
+	Frame.BackgroundColor3 = Theme.Dark
+	Frame.BorderSizePixel = 0
+	Frame.Active = true
+	Frame.Draggable = true
+	Frame.Parent = ScreenGui
+	Frame.ClipsDescendants = true
+	Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
 
--- ON/OFF toggle (from Chocola)
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Parent = MainFrame
-ToggleBtn.Size = UDim2.new(0, 40, 0, 16)
-ToggleBtn.Position = UDim2.new(1, -48, 0, 6)
-ToggleBtn.BackgroundColor3 = Theme.Success
-ToggleBtn.Text = "ON"
-ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleBtn.TextSize = 9
-ToggleBtn.Font = FontBody
-ToggleBtn.BorderSizePixel = 0
-ToggleBtn.TextTransparency = 1
-ToggleBtn.BackgroundTransparency = 1
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
+	local UIStroke = Instance.new("UIStroke", Frame)
+	UIStroke.Color = Theme.Border
+	UIStroke.Thickness = 2
+	UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-local ListeningLabel = Instance.new("TextLabel")
-ListeningLabel.Parent = MainFrame
-ListeningLabel.BackgroundTransparency = 1
-ListeningLabel.Position = UDim2.new(1, -95, 0, 22)
-ListeningLabel.Size = UDim2.new(0, 70, 0, 12)
-ListeningLabel.Font = FontBody
-ListeningLabel.Text = "listening.."
-ListeningLabel.TextColor3 = Theme.Moonbeam
-ListeningLabel.TextSize = 9
-ListeningLabel.TextXAlignment = Enum.TextXAlignment.Right
-ListeningLabel.TextTransparency = 1
-
-local MoonIcon = Instance.new("TextLabel")
-MoonIcon.Parent = MainFrame
-MoonIcon.BackgroundTransparency = 1
-MoonIcon.Position = UDim2.new(1, -22, 0, 20)
-MoonIcon.Size = UDim2.new(0, 14, 0, 14)
-MoonIcon.Font = FontTitle
-MoonIcon.Text = "💫"
-MoonIcon.TextColor3 = Theme.Moonlight
-MoonIcon.TextSize = 12
-MoonIcon.TextTransparency = 1
-
-ToggleBtn.MouseButton1Click:Connect(function()
-	acceptEnabled = not acceptEnabled
-	if acceptEnabled then
-		ToggleBtn.BackgroundColor3 = Theme.Success
-		ToggleBtn.Text = "ON"
-		ListeningLabel.Text = "listening.."
-		MoonIcon.Text = "💫"
-	else
-		ToggleBtn.BackgroundColor3 = Theme.Error
-		ToggleBtn.Text = "OFF"
-		ListeningLabel.Text = "paused"
-		MoonIcon.Text = "⏸"
-	end
-end)
-
-------------------------------------------------------------
--- Drag + save pos
-------------------------------------------------------------
-local dragging, dragInput, dragStart, startPos
-MainFrame.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = MainFrame.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-				savePos(MainFrame)
-			end
-		end)
-	end
-end)
-MainFrame.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-		dragInput = input
-	end
-end)
-UserInputService.InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
-		local delta = input.Position - dragStart
-		MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
-TweenService:Create(MainFrame, TweenInfo.new(0.55, Enum.EasingStyle.Back), {
-	Size = UDim2.new(0, 200, 0, 42),
-	BackgroundTransparency = 0.08
-}):Play()
-
-local function fadeIn(obj, delayTime, props)
-	task.delay(delayTime, function()
-		TweenService:Create(obj, TweenInfo.new(0.35), props or { TextTransparency = 0 }):Play()
+	local n1 = 0
+	local strokeConn = RunService.Heartbeat:Connect(function()
+		n1 = n1 + 0.005
+		if n1 > 1 then n1 = 0 end
+		local v90 = n1 * math.pi
+		local v91 = 80 + 120 * math.sin(v90)
+		local v93 = 180 + 75 * math.sin(v90 + 0.5)
+		UIStroke.Color = Color3.fromRGB(0, v91, v93)
 	end)
+
+	local Header = Instance.new("Frame", Frame)
+	Header.Size = UDim2.new(1, 0, 0, 30)
+	Header.BackgroundTransparency = 1
+
+	local Title = Instance.new("TextLabel", Header)
+	Title.Size = UDim2.new(1, -40, 1, 0)
+	Title.Position = UDim2.new(0, 10, 0, 0)
+	Title.Text = "K2 AUTO ACCEPT"
+	Title.Font = Enum.Font.GothamBlack
+	Title.TextSize = 12
+	Title.TextColor3 = Color3.new(1, 1, 1)
+	Title.BackgroundTransparency = 1
+	Title.TextXAlignment = Enum.TextXAlignment.Left
+	Instance.new("UIGradient", Title).Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Theme.Gradient1),
+		ColorSequenceKeypoint.new(0.5, Theme.Gradient2),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+	})
+
+	local MinBox = Instance.new("Frame", Header)
+	MinBox.BackgroundColor3 = Color3.fromRGB(25, 40, 70)
+	MinBox.Size = UDim2.new(0, 20, 0, 20)
+	MinBox.Position = UDim2.new(1, -26, 0.5, -10)
+	Instance.new("UICorner", MinBox).CornerRadius = UDim.new(0, 5)
+
+	local MinBtn = Instance.new("TextButton", MinBox)
+	MinBtn.Text = "-"
+	MinBtn.Font = Enum.Font.GothamBold
+	MinBtn.TextSize = 15
+	MinBtn.TextColor3 = Theme.Light
+	MinBtn.BackgroundTransparency = 1
+	MinBtn.Size = UDim2.new(1, 0, 1, 0)
+
+	local Content = Instance.new("Frame", Frame)
+	Content.Name = "ContentFrame"
+	Content.Size = UDim2.new(1, -16, 1, -45)
+	Content.Position = UDim2.new(0, 8, 0, 35)
+	Content.BackgroundTransparency = 1
+	Content.ClipsDescendants = true
+
+	local Layout = Instance.new("UIListLayout", Content)
+	Layout.SortOrder = Enum.SortOrder.LayoutOrder
+	Layout.Padding = UDim.new(0, 5)
+	Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+	Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		task.wait()
+		Frame.Size = UDim2.new(0, 230, 0, Layout.AbsoluteContentSize.Y + 45)
+	end)
+
+	local Row = Instance.new("Frame", Content)
+	Row.Size = UDim2.new(0.95, 0, 0, 28)
+	Row.BackgroundColor3 = Color3.fromRGB(20, 35, 60)
+	Row.BorderSizePixel = 0
+	Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 6)
+
+	local RowLabel = Instance.new("TextLabel", Row)
+	RowLabel.Size = UDim2.new(0.6, 0, 1, 0)
+	RowLabel.Position = UDim2.new(0, 10, 0, 0)
+	RowLabel.Text = "Accept Trades"
+	RowLabel.Font = Enum.Font.GothamBold
+	RowLabel.TextSize = 11
+	RowLabel.TextColor3 = Color3.fromRGB(160, 200, 255)
+	RowLabel.BackgroundTransparency = 1
+	RowLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+	local Toggle = Instance.new("TextButton", Row)
+	Toggle.Size = UDim2.new(0, 50, 0, 22)
+	Toggle.Position = UDim2.new(1, -55, 0.5, -11)
+	Toggle.BackgroundColor3 = Theme.Success
+	Toggle.Text = "ON"
+	Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Toggle.TextSize = 10
+	Toggle.Font = Enum.Font.GothamBold
+	Toggle.BorderSizePixel = 0
+	Instance.new("UICorner", Toggle).CornerRadius = UDim.new(1, 0)
+
+	Toggle.MouseButton1Click:Connect(function()
+		acceptEnabled = not acceptEnabled
+		if acceptEnabled then
+			Toggle.BackgroundColor3 = Theme.Success
+			Toggle.Text = "ON"
+			if statusLabel then
+				statusLabel.Text = "● Active"
+				statusLabel.TextColor3 = Theme.Success
+			end
+		else
+			Toggle.BackgroundColor3 = Theme.Error
+			Toggle.Text = "OFF"
+			if statusLabel then
+				statusLabel.Text = "● Paused"
+				statusLabel.TextColor3 = Theme.Error
+			end
+		end
+	end)
+
+	local Status = Instance.new("TextLabel", Content)
+	Status.Size = UDim2.new(0.95, 0, 0, 22)
+	Status.Text = "● Active"
+	Status.Font = Enum.Font.GothamBold
+	Status.TextSize = 13
+	Status.TextColor3 = Theme.Success
+	Status.BackgroundColor3 = Color3.fromRGB(20, 35, 60)
+	Status.BorderSizePixel = 0
+	Instance.new("UICorner", Status).CornerRadius = UDim.new(0, 6)
+	Status.TextXAlignment = Enum.TextXAlignment.Center
+
+	local Disc = Instance.new("TextLabel", Content)
+	Disc.Size = UDim2.new(0.95, 0, 0, 18)
+	Disc.Text = "discord.gg/bxjXucMVqB"
+	Disc.Font = Enum.Font.GothamBold
+	Disc.TextSize = 12
+	Disc.TextColor3 = Theme.Discord
+	Disc.BackgroundTransparency = 1
+	Disc.TextXAlignment = Enum.TextXAlignment.Center
+
+	local collapsed = false
+	local savedH = 0
+	MinBtn.MouseButton1Click:Connect(function()
+		collapsed = not collapsed
+		if not collapsed then
+			Frame.Size = UDim2.new(0, 230, 0, savedH)
+			Content.Visible = true
+			MinBtn.Text = "-"
+			task.wait(0.05)
+			local h = Layout.AbsoluteContentSize.Y + 45
+			if h ~= savedH then
+				savedH = h
+				Frame.Size = UDim2.new(0, 230, 0, h)
+			end
+		else
+			savedH = Frame.Size.Y.Offset
+			Frame.Size = UDim2.new(0, 230, 0, 30)
+			Content.Visible = false
+			MinBtn.Text = "+"
+		end
+		task.wait(0.1)
+		savePos(Frame)
+	end)
+
+	-- drag + save
+	local dragging, dragStart, startPos
+	Frame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = input.Position
+			startPos = Frame.Position
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local d = input.Position - dragStart
+			Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+			savePos(Frame)
+		end
+	end)
+
+	Frame.AncestryChanged:Connect(function()
+		if not Frame.Parent and strokeConn then
+			strokeConn:Disconnect()
+		end
+	end)
+
+	task.defer(function()
+		Frame.Size = UDim2.new(0, 230, 0, Layout.AbsoluteContentSize.Y + 45)
+	end)
+
+	return Toggle, Status, Frame
 end
-fadeIn(Title, 0.18)
-fadeIn(DiscordLabel, 0.24)
-fadeIn(ListeningLabel, 0.3)
-fadeIn(MoonIcon, 0.3)
-fadeIn(ToggleBtn, 0.3, { TextTransparency = 0, BackgroundTransparency = 0 })
-task.delay(0.3, function()
-	TweenService:Create(Separator, TweenInfo.new(0.4), { BackgroundTransparency = 0.5 }):Play()
-end)
 
-RunService.RenderStepped:Connect(function()
-	local t = tick()
-	if acceptEnabled then
-		MoonIcon.Rotation = (t * 90) % 360
-		ListeningLabel.TextTransparency = 0.15 + math.abs(math.sin(t * 1.2)) * 0.35
-	end
-	grad.Rotation = (t * 45) % 360
-end)
-
-------------------------------------------------------------
--- CHOCOLA: click helper (firesignal or VIM)
-------------------------------------------------------------
 local function clickGui(btn)
 	if not btn then return end
 	if firesignal then
@@ -573,253 +492,185 @@ local function clickGui(btn)
 		return
 	end
 	pcall(function()
+		local VIM = game:GetService("VirtualInputManager")
 		local pos = btn.AbsolutePosition + btn.AbsoluteSize / 2
-		VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
-		VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
+		VIM:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
+		VIM:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
 	end)
 end
 
-------------------------------------------------------------
--- CHOCOLA: DuelsMachinePrompt "Trade Request" → Yes
-------------------------------------------------------------
-task.spawn(function()
-	local pg = plr:WaitForChild("PlayerGui")
-	local root = pg:FindFirstChild("DuelsMachinePrompt") or pg:WaitForChild("DuelsMachinePrompt", 30)
-	if not root then
-		warn("[K2] DuelsMachinePrompt not found")
-		return
-	end
-	local inner = root:FindFirstChild("DuelsMachinePrompt") or root
-	local function tryAcceptPrompt(prompt)
-		if not acceptEnabled then return end
-		local label = prompt:FindFirstChild("Label", true)
-		if label and label.Text == "Trade Request" then
-			local yes = prompt:FindFirstChild("Yes", true)
-			if yes then
-				print("[K2] Trade Request prompt → Yes")
-				ListeningLabel.Text = "accepting.."
-				MoonIcon.Text = "✅"
-				clickGui(yes)
+local function init()
+	print("[K2] Initializing...")
+	toggleBtn, statusLabel, mainFrame = buildGui()
+
+	-- Anti-AFK jump every 45s
+	task.spawn(function()
+		while task.wait(45) do
+			local char = LocalPlayer.Character
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
+			if hum and hum.Health > 0 then
+				pcall(function()
+					hum:ChangeState(Enum.HumanoidStateType.Jumping)
+				end)
+			end
+			if statusLabel then
+				statusLabel.Text = "🔄 AFK"
+				statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+				task.wait(2)
+				if not acceptEnabled then
+					statusLabel.Text = "● Paused"
+					statusLabel.TextColor3 = Theme.Error
+				else
+					statusLabel.Text = "● Active"
+					statusLabel.TextColor3 = Theme.Success
+				end
 			end
 		end
-	end
-	inner.ChildAdded:Connect(function(child)
-		if child.Name == "Prompt" then
-			task.defer(function() tryAcceptPrompt(child) end)
-		end
 	end)
-	-- existing prompts
-	for _, child in ipairs(inner:GetChildren()) do
-		if child.Name == "Prompt" then
-			tryAcceptPrompt(child)
+
+	task.delay(5, function()
+		local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+		-- AFK tag above head
+		local function addAfkTag()
+			local head = (LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()):FindFirstChild("Head")
+			if not head or head:FindFirstChild("AFKTag") then return end
+			local bill = Instance.new("BillboardGui")
+			bill.Name = "AFKTag"
+			bill.Size = UDim2.new(0, 200, 0, 50)
+			bill.StudsOffset = Vector3.new(0, 2.5, 0)
+			bill.AlwaysOnTop = true
+			bill.Parent = head
+			local t = Instance.new("TextLabel")
+			t.Size = UDim2.new(1, 0, 1, 0)
+			t.BackgroundTransparency = 1
+			t.Text = "K2 Auto Accept AFK"
+			t.TextColor3 = Theme.Light
+			t.TextStrokeTransparency = 0
+			t.TextScaled = true
+			t.Font = Enum.Font.GothamBold
+			t.Parent = bill
 		end
-	end
-	print("[K2] DuelsMachinePrompt hooked")
-end)
+		addAfkTag()
+		LocalPlayer.CharacterAdded:Connect(function()
+			task.wait(1)
+			addAfkTag()
+		end)
 
-------------------------------------------------------------
--- CHOCOLA: ReadyButton on Other side (UI backup)
-------------------------------------------------------------
-local function tryReadyButtonUI()
-	if not acceptEnabled then return end
-	local trade = plr.PlayerGui:FindFirstChild("TradeLiveTrade")
-	if not trade then return end
-	local inner = trade:FindFirstChild("TradeLiveTrade", true) or trade
-	local other = inner:FindFirstChild("Other", true)
-	if not other then return end
-	local readyBtn = other:FindFirstChild("ReadyButton") or other:FindFirstChild("ReadyButton", true)
-	if readyBtn then
-		clickGui(readyBtn)
-	end
-end
-
-------------------------------------------------------------
--- TRADE AUTOMATION (remotes + Chocola UI)
-------------------------------------------------------------
-local currentTradeActive = false
-local lastCancelAt = 0
-local tradeOpenAt = 0
-local lastAcceptAt = 0
-
-local function tryAcceptInvite(tradeId)
-	if not acceptEnabled then return false end
-	if not tradeId then return false end
-	if not acceptInviteRF then resolveRemotes() end
-	if not acceptInviteRF then return false end
-	ListeningLabel.Text = "accepting.."
-	local ok, res = pcall(function()
-		return acceptInviteRF:InvokeServer(ACCEPT_INVITE_GUID, tradeId)
-	end)
-	if ok and res then
-		ListeningLabel.Text = "in trade ✓"
-		MoonIcon.Text = "✅"
-		currentTradeActive = true
-		tradeOpenAt = tick()
-		return true
-	end
-	ListeningLabel.Text = "error"
-	task.delay(2, function()
-		if not currentTradeActive and acceptEnabled then
-			ListeningLabel.Text = "listening.."
-			MoonIcon.Text = "💫"
-		end
-	end)
-	return false
-end
-
-task.spawn(function()
-	while true do
-		if acceptEnabled then
-			local tradeUI = plr.PlayerGui:FindFirstChild("TradeLiveTrade")
-			if tradeUI and tradeUI.Enabled then
-				if not currentTradeActive then
-					currentTradeActive = true
-					tradeOpenAt = tick()
-					ListeningLabel.Text = "in trade ✓"
-					MoonIcon.Text = "✅"
-				end
-				local openedFor = tick() - tradeOpenAt
-				if openedFor >= 1.0 and (tick() - lastCancelAt) > 1.5 then
-					local cancelled = scanTradeForNonTargets(tradeUI)
-					if cancelled then
-						lastCancelAt = tick()
-						currentTradeActive = false
-						ListeningLabel.Text = "cancelled"
-						MoonIcon.Text = "🚫"
-						task.delay(1.2, function()
-							if not currentTradeActive and acceptEnabled then
-								ListeningLabel.Text = "listening.."
-								MoonIcon.Text = "💫"
-							end
-						end)
-					else
-						-- Chocola UI ready + remote ready/accept
-						tryReadyButtonUI()
-						if not readyRE or not acceptRE then resolveRemotes() end
-						if readyRE then
-							pcall(function() readyRE:FireServer(READY_GUID) end)
-						end
-						task.wait(0.8)
-						if acceptRE then
-							pcall(function() acceptRE:FireServer(ACCEPT_GUID) end)
-						end
+		-- DuelsMachinePrompt Trade Request → Yes
+		local root = PlayerGui:FindFirstChild("DuelsMachinePrompt") or PlayerGui:WaitForChild("DuelsMachinePrompt", 60)
+		if root then
+			local inner = root:FindFirstChild("DuelsMachinePrompt") or root:WaitForChild("DuelsMachinePrompt", 10) or root
+			local function tryPrompt(prompt)
+				if not acceptEnabled then return end
+				local label = prompt:FindFirstChild("Label", true)
+				if label and label.Text == "Trade Request" then
+					local yes = prompt:FindFirstChild("Yes", true)
+					if yes then
+						print("[K2] Trade Request → Yes")
+						clickGui(yes)
 					end
 				end
-			elseif currentTradeActive then
-				currentTradeActive = false
-				if acceptEnabled then
-					ListeningLabel.Text = "listening.."
-					MoonIcon.Text = "💫"
+			end
+			inner.ChildAdded:Connect(function(child)
+				if child.Name == "Prompt" then
+					task.defer(function() tryPrompt(child) end)
 				end
-			else
-				-- idle: still try UI ready if trade somehow open
-				tryReadyButtonUI()
-			end
-		end
-		task.wait(0.5)
-	end
-end)
-
-plr.PlayerGui.DescendantAdded:Connect(function(obj)
-	if not acceptEnabled or not currentTradeActive then return end
-	if not (obj:IsA("TextLabel") or obj:IsA("TextButton")) then return end
-	if (tick() - tradeOpenAt) < 1.0 then return end
-	if (tick() - lastCancelAt) < 1.5 then return end
-	local tradeUI = plr.PlayerGui:FindFirstChild("TradeLiveTrade")
-	if tradeUI and tradeUI.Enabled then
-		task.defer(function()
-			if scanTradeForNonTargets(tradeUI) then
-				lastCancelAt = tick()
-				currentTradeActive = false
-				ListeningLabel.Text = "cancelled"
-				MoonIcon.Text = "🚫"
-			end
-		end)
-	end
-end)
-
--- CreateInvite + catch-all GUID
-local hooked = {}
-local function onPossibleInvite(tradeId, sourceName)
-	if not acceptEnabled then return end
-	if not tradeId or not isGuid(tostring(tradeId)) then return end
-	if (tick() - lastAcceptAt) < 1.0 then return end
-	lastAcceptAt = tick()
-	print("[K2] Incoming invite via", sourceName, "id=", tradeId)
-	tryAcceptInvite(tradeId)
-end
-
-local function bindCreateInvite()
-	if not createInviteRE then resolveRemotes() end
-	if createInviteRE and not hooked[createInviteRE] then
-		hooked[createInviteRE] = true
-		createInviteRE.OnClientEvent:Connect(function(tradeId, ...)
-			onPossibleInvite(tradeId, createInviteRE.Name)
-		end)
-		print("[K2] CreateInvite hooked:", createInviteRE.Name)
-		return true
-	end
-	return createInviteRE ~= nil
-end
-
-if not bindCreateInvite() then
-	warn("[K2] CreateInvite unresolved — catch-all only")
-end
-
-for _, child in ipairs(Net:GetChildren()) do
-	if child:IsA("RemoteEvent") and not hooked[child] then
-		hooked[child] = true
-		child.OnClientEvent:Connect(function(a, ...)
-			if isGuid(a) then onPossibleInvite(a, child.Name) end
-		end)
-	end
-end
-
-Net.ChildAdded:Connect(function(child)
-	task.wait()
-	if child:IsA("RemoteEvent") and not hooked[child] then
-		hooked[child] = true
-		child.OnClientEvent:Connect(function(a, ...)
-			if isGuid(a) then onPossibleInvite(a, child.Name) end
-		end)
-	end
-end)
-
-------------------------------------------------------------
--- CHOCOLA: Anti-AFK jump every 45s + status blink
-------------------------------------------------------------
-task.spawn(function()
-	while task.wait(45) do
-		local char = plr.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		if hum and hum.Health > 0 then
-			pcall(function()
-				hum:ChangeState(Enum.HumanoidStateType.Jumping)
 			end)
-		end
-		if acceptEnabled and not currentTradeActive then
-			ListeningLabel.Text = "AFK"
-			MoonIcon.Text = "🔄"
-			task.wait(2)
-			if acceptEnabled and not currentTradeActive then
-				ListeningLabel.Text = "listening.."
-				MoonIcon.Text = "💫"
+			for _, child in ipairs(inner:GetChildren()) do
+				if child.Name == "Prompt" then tryPrompt(child) end
 			end
+			print("[K2] DuelsMachinePrompt hooked")
+		else
+			warn("[K2] DuelsMachinePrompt not found")
 		end
-	end
+
+		-- ReadyButton on Other + non-target cancel scan
+		task.spawn(function()
+			local tradeOpenAt = 0
+			local wasInTrade = false
+			while task.wait(0.5) do
+				if statusLabel then
+					if not acceptEnabled then
+						statusLabel.Text = "● Paused"
+						statusLabel.TextColor3 = Theme.Error
+					elseif statusLabel.Text ~= "🔄 AFK" then
+						statusLabel.Text = "● Active"
+						statusLabel.TextColor3 = Theme.Success
+					end
+				end
+
+				if not acceptEnabled then continue end
+
+				local tradeUI = PlayerGui:FindFirstChild("TradeLiveTrade")
+				if tradeUI and tradeUI.Enabled ~= false then
+					if not wasInTrade then
+						wasInTrade = true
+						tradeOpenAt = tick()
+					end
+					-- ReadyButton (Chocola)
+					local inner = tradeUI:FindFirstChild("TradeLiveTrade", true) or tradeUI
+					local other = inner:FindFirstChild("Other", true)
+					if other then
+						local readyBtn = other:FindFirstChild("ReadyButton") or other:FindFirstChild("ReadyButton", true)
+						if readyBtn then
+							clickGui(readyBtn)
+						end
+					end
+					-- Cancel if non-target on THEIR side (only after 1s open)
+					if (tick() - tradeOpenAt) >= 1.0 then
+						scanTradeForNonTargets(tradeUI)
+					end
+				else
+					wasInTrade = false
+				end
+			end
+		end)
+
+		-- Instant scan when labels appear in trade
+		PlayerGui.DescendantAdded:Connect(function(obj)
+			if not acceptEnabled then return end
+			if not (obj:IsA("TextLabel") or obj:IsA("TextButton")) then return end
+			local tradeUI = PlayerGui:FindFirstChild("TradeLiveTrade")
+			if tradeUI and tradeUI.Enabled ~= false then
+				task.defer(function()
+					scanTradeForNonTargets(tradeUI)
+				end)
+			end
+		end)
+	end)
+
+	print("[K2] Initialized (Chocola flow + whitelist cancel)")
+end
+
+init()
+
+-- Restart GUI on character respawn (Chocola)
+LocalPlayer.CharacterAdded:Connect(function()
+	print("[K2] Character added — restarting GUI")
+	task.wait(3)
+	local old = CoreGui.RobloxGui:FindFirstChild("ChocolaAutoAccept")
+	if old then old:Destroy() end
+	acceptEnabled = true
+	statusLabel = nil
+	mainFrame = nil
+	toggleBtn = nil
+	init()
 end)
 
--- Anti-idle mouse click every 60s (Chocola)
+-- Anti-restart click every 60s
 task.spawn(function()
+	local VIM = Instance.new("VirtualInputManager")
+	print("[K2] Anti-restart click every 60s")
 	while task.wait(60) do
 		pcall(function()
-			VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+			VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1)
 			task.wait(0.1)
-			VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+			VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
 		end)
 	end
 end)
 
 local n = 0
 for _ in pairs(TargetBrainrots) do n = n + 1 end
-print("[K2] Loaded | Chocola embed + getupvalue | whitelist:", n)
+print("[K2] Whitelist size:", n)
