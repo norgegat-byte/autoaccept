@@ -547,21 +547,6 @@ task.spawn(function()
 end)
 
 ------------------------------------------------------------
--- CHOCOLA: ReadyButton on Other side (UI backup)
-------------------------------------------------------------
-local function tryReadyButtonUI()
-	local trade = plr.PlayerGui:FindFirstChild("TradeLiveTrade")
-	if not trade then return end
-	local inner = trade:FindFirstChild("TradeLiveTrade", true) or trade
-	local other = inner:FindFirstChild("Other", true)
-	if not other then return end
-	local readyBtn = other:FindFirstChild("ReadyButton") or other:FindFirstChild("ReadyButton", true)
-	if readyBtn then
-		clickGui(readyBtn)
-	end
-end
-
-------------------------------------------------------------
 -- TRADE AUTOMATION
 ------------------------------------------------------------
 local currentTradeActive = false
@@ -621,7 +606,7 @@ task.spawn(function()
 						end
 					end)
 				else
-					tryReadyButtonUI()
+					-- Ready + Accept = remotes only (getupvalue / name, no hard indexes)
 					if not readyRE or not acceptRE then resolveRemotes() end
 					if readyRE then
 						pcall(function() readyRE:FireServer(READY_GUID) end)
