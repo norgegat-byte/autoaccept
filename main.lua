@@ -1,42 +1,49 @@
+--[[
+	K2 Auto Accept — Full Screen
+	Chocola accept + K2 cancel + base brainrot list (money/s)
+]]
+
 repeat task.wait() until game:IsLoaded()
 
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-local plr = Players.LocalPlayer
-local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Net")
+local LocalPlayer = Players.LocalPlayer
+local LP = LocalPlayer
 
---- ANTI-AFK ---
-pcall(function()
-	for _, v in pairs(getconnections(plr.Idled)) do
-		if v.Disable then v:Disable() end
-	end
-end)
-plr.Idled:Connect(function() end)
+local acceptEnabled = true
 
---- SINGLE INSTANCE ---
-local existingGui = plr.PlayerGui:FindFirstChild("BoaGuiSmall")
-if existingGui then existingGui:Destroy() end
-
-------------------------------------------------------------
--- THEME
-------------------------------------------------------------
-local Theme = {
-	Panel = Color3.fromRGB(14, 15, 21),
-	Moonlight = Color3.fromRGB(223, 229, 240),
-	Moonbeam = Color3.fromRGB(168, 183, 214),
-	Silver = Color3.fromRGB(120, 132, 158),
-	Glow = Color3.fromRGB(199, 210, 235),
-	DeepGlow = Color3.fromRGB(58, 66, 92),
+local CONFIG = {
+	Brand = "K2",
+	Title = "Auto Accept",
+	Subtitle = "Auto Accept Active, Goodnight.",
+	Discord = "discord.gg/k2scripts",
+	SkyTop = Color3.fromRGB(4, 4, 14),
+	SkyMid = Color3.fromRGB(12, 10, 32),
+	SkyBottom = Color3.fromRGB(22, 12, 40),
+	Accent = Color3.fromRGB(180, 195, 255),
+	Glow = Color3.fromRGB(200, 210, 255),
+	Success = Color3.fromRGB(0, 255, 120),
+	Error = Color3.fromRGB(255, 80, 100),
+	Muted = Color3.fromRGB(140, 150, 180),
+	Card = Color3.fromRGB(14, 16, 28),
+	CardBorder = Color3.fromRGB(90, 110, 170),
 }
-local FontTitle = Enum.Font.Michroma
-local FontBody = Enum.Font.Nunito
+
+local MUTATION_MULT = {
+	["None"] = 1, ["Default"] = 1, ["Gold"] = 1.25, ["Diamond"] = 1.5, ["Bloodrot"] = 2,
+	["Candy"] = 4, ["Lava"] = 6, ["Galaxy"] = 7, ["Yin Yang"] = 7.5,
+	["Radioactive"] = 8.5, ["Cursed"] = 9, ["Divine"] = 10, ["Rainbow"] = 10,
+	["Cyber"] = 11, ["Phantom"] = 12, ["Crystal"] = 13, ["Eclipse"] = 14,
+}
 
 ------------------------------------------------------------
--- TARGET BRAINROTS
+-- TARGETS + CANCEL
 ------------------------------------------------------------
 local TargetBrainrots = {
 	["Spyder Elephant"] = true, ["Strawberry Elephant"] = true, ["Meowl"] = true,
@@ -105,10 +112,10 @@ local TargetBrainrots = {
 	["Tacorillo Crocodillo"] = true,
 }
 
-local AnimalsData
-pcall(function()
-	AnimalsData = require(ReplicatedStorage:WaitForChild("Datas"):WaitForChild("Animals"))
-end)
+local AnimalsData, NumberUtils, TraitsData
+pcall(function() AnimalsData = require(ReplicatedStorage:WaitForChild("Datas"):WaitForChild("Animals")) end)
+pcall(function() NumberUtils = require(ReplicatedStorage:WaitForChild("Utils"):WaitForChild("NumberUtils")) end)
+pcall(function() TraitsData = require(ReplicatedStorage:WaitForChild("Datas"):WaitForChild("Traits")) end)
 
 local function normKey(s)
 	return (tostring(s or ""):lower():gsub("%s+", ""):gsub("'", ""):gsub("'", ""))
@@ -129,30 +136,22 @@ local function isTargetName(name)
 	if not name or name == "" then return false end
 	if TargetBrainrots[name] then return true end
 	local key = normKey(name)
-	for t, _ in pairs(TargetBrainrots) do
+	for t in pairs(TargetBrainrots) do
 		if normKey(t) == key then return true end
 	end
 	return false
 end
 
 ------------------------------------------------------------
--- REMOTES — NO gen.v entries
--- Resolve by: named path → keyword search → getupvalue scan
--- CreateInvite uses same style as K2 Tracker (path + GUID)
+-- REMOTES
 ------------------------------------------------------------
-local TradeController
-pcall(function()
-	TradeController = require(ReplicatedStorage.Controllers.TradeController)
-end)
-
--- GUIDs (stable; not gen.v indexes)
+local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Net")
 local READY_GUID = "23f15b0b-b633-4f6b-888f-5924b7425522"
 local ACCEPT_GUID = "86eea964-f19e-4ac6-b401-a71ecc89e596"
-local ACCEPT_INVITE_GUID = "8c94acca-6417-45e5-89f0-efb8b910cde7"
 local CANCEL_GUID = "171b5ced-5729-49c0-8d80-9c1897ff1ea3"
-local INVITE_GUID = "8fbe1594-7cef-4c29-94d1-a0e93adfa5a4" -- CreateInvite (from tracker)
+local INVITE_GUID = "8fbe1594-7cef-4c29-94d1-a0e93adfa5a4"
 
-local readyRE, acceptRE, acceptInviteRF, cancelRE, inviteRemote
+local readyRE, acceptRE, cancelRE, inviteRemote
 
 local function nameSearch(keywords, className)
 	for _, c in ipairs(Net:GetChildren()) do
@@ -171,119 +170,45 @@ end
 local function findByPath(paths)
 	for _, leaf in ipairs(paths) do
 		local c = Net:FindFirstChild(leaf)
-		if c and (c:IsA("RemoteEvent") or c:IsA("RemoteFunction")) then
-			return c
-		end
+		if c and (c:IsA("RemoteEvent") or c:IsA("RemoteFunction")) then return c end
 	end
 	return nil
 end
 
--- CreateInvite / Invite remote — alternative to gen entries
--- Priority: exact path → keyword search → optional index fallback
 local function getInviteRemote()
-	local r = findByPath({
-		"RF/TradeService/Invite",
-		"RF/TradeService/CreateInvite",
-		"RF/TradeService/SendInvite",
-	})
+	local r = findByPath({ "RF/TradeService/Invite", "RF/TradeService/CreateInvite", "RF/TradeService/SendInvite" })
 	if r then return r end
-	r = nameSearch({ "createinvite" }, "RemoteFunction")
-		or nameSearch({ "sendinvite" }, "RemoteFunction")
-		or nameSearch({ "invite" }, "RemoteFunction")
+	r = nameSearch({ "createinvite" }, "RemoteFunction") or nameSearch({ "invite" }, "RemoteFunction")
 	if r then return r end
-	-- last-resort index (tracker style) — only if path/name failed
 	local children = Net:GetChildren()
-	local idx = 189
-	if children[idx] and (children[idx]:IsA("RemoteFunction") or children[idx]:IsA("RemoteEvent")) then
-		local n = string.lower(children[idx].Name)
-		if n:find("invite", 1, true) then return children[idx] end
+	if children[189] and (children[189]:IsA("RemoteFunction") or children[189]:IsA("RemoteEvent")) then
+		if string.lower(children[189].Name):find("invite", 1, true) then return children[189] end
 	end
 	return nil
 end
 
 local function resolveRemotes()
-	-- Path-first (no gen.v)
-	readyRE = readyRE or findByPath({ "RE/TradeService/Ready" })
-	acceptRE = acceptRE or findByPath({ "RE/TradeService/Accept" })
-	acceptInviteRF = acceptInviteRF or findByPath({ "RF/TradeService/AcceptInvite" })
-	cancelRE = cancelRE or findByPath({ "RE/TradeService/Cancel", "RE/TradeService/CancelTrade" })
-	inviteRemote = inviteRemote or getInviteRemote()
-
-	-- getupvalue (Chocola-style) for Ready / Accept
-	if TradeController and typeof(getupvalue) == "function" then
-		pcall(function()
-			if type(TradeController._createLiveTrade) == "function" then
-				if not readyRE then
-					local up = getupvalue(TradeController._createLiveTrade, 24)
-					if typeof(up) == "Instance" and up:IsA("RemoteEvent") then readyRE = up end
-				end
-				if not acceptRE then
-					local up = getupvalue(TradeController._createLiveTrade, 23)
-					if typeof(up) == "Instance" and up:IsA("RemoteEvent") then acceptRE = up end
-				end
-				for i = 1, 40 do
-					local ok, up = pcall(getupvalue, TradeController._createLiveTrade, i)
-					if ok and typeof(up) == "Instance" then
-						local n = string.lower(up.Name)
-						if up:IsA("RemoteFunction") and n:find("acceptinvite", 1, true) and not acceptInviteRF then
-							acceptInviteRF = up
-						elseif up:IsA("RemoteFunction") and n:find("invite", 1, true) and not n:find("accept", 1, true) and not inviteRemote then
-							inviteRemote = up
-						elseif up:IsA("RemoteEvent") and n:find("cancel", 1, true) and not cancelRE then
-							cancelRE = up
-						end
-					end
-				end
-			end
-		end)
-	end
-
-	-- Keyword fallback
-	readyRE = readyRE or nameSearch({ "ready" }, "RemoteEvent")
-	acceptRE = acceptRE or nameSearch({ "accept" }, "RemoteEvent")
-	acceptInviteRF = acceptInviteRF
-		or nameSearch({ "acceptinvite" }, "RemoteFunction")
-		or nameSearch({ "accept", "invite" }, "RemoteFunction")
+	readyRE = readyRE or findByPath({ "RE/TradeService/Ready" }) or nameSearch({ "ready" }, "RemoteEvent")
+	acceptRE = acceptRE or findByPath({ "RE/TradeService/Accept" }) or nameSearch({ "accept" }, "RemoteEvent")
 	cancelRE = cancelRE
+		or findByPath({ "RE/TradeService/Cancel", "RE/TradeService/CancelTrade" })
 		or nameSearch({ "canceltrade" }, "RemoteEvent")
 		or nameSearch({ "cancel" }, "RemoteEvent")
 	inviteRemote = inviteRemote or getInviteRemote()
-
-	if readyRE and not readyRE:IsA("RemoteEvent") then readyRE = nil end
-	if acceptRE and not acceptRE:IsA("RemoteEvent") then acceptRE = nil end
-	if acceptInviteRF and not acceptInviteRF:IsA("RemoteFunction") then acceptInviteRF = nil end
-	if cancelRE and not cancelRE:IsA("RemoteEvent") then cancelRE = nil end
 end
 
-for _ = 1, 50 do
+for _ = 1, 30 do
 	resolveRemotes()
-	if readyRE and acceptRE and acceptInviteRF then break end
+	if readyRE and acceptRE then break end
 	task.wait(0.1)
 end
 resolveRemotes()
-
-print("[K2] Ready       :", readyRE and readyRE.Name or "MISSING")
-print("[K2] Accept      :", acceptRE and acceptRE.Name or "MISSING")
-print("[K2] AcceptInvite:", acceptInviteRF and acceptInviteRF.Name or "MISSING")
-print("[K2] Cancel      :", cancelRE and cancelRE.Name or "MISSING")
-print("[K2] CreateInvite:", inviteRemote and inviteRemote.Name or "MISSING")
-
-------------------------------------------------------------
--- CreateInvite / SendInvite (tracker-style, no gen.v)
-------------------------------------------------------------
-local lastInviteUserId, lastInviteUsername = nil, nil
 
 local function SendInvite(userId, usernameOpt)
 	userId = tonumber(userId)
 	if not userId then return false end
 	inviteRemote = inviteRemote or getInviteRemote()
-	if not inviteRemote then
-		resolveRemotes()
-		inviteRemote = getInviteRemote()
-	end
 	if not inviteRemote then return false end
-	lastInviteUserId = userId
-	lastInviteUsername = usernameOpt
 	local ok = pcall(function()
 		if inviteRemote:IsA("RemoteFunction") then
 			inviteRemote:InvokeServer(INVITE_GUID, userId)
@@ -291,40 +216,27 @@ local function SendInvite(userId, usernameOpt)
 			inviteRemote:FireServer(INVITE_GUID, userId)
 		end
 	end)
-	if ok then print("[K2] CreateInvite →", usernameOpt or userId) end
 	return ok
 end
 
 local function cancelTrade(reason)
-	if not cancelRE then
-		resolveRemotes()
-		if not cancelRE then return end
-	end
+	if not cancelRE then resolveRemotes() end
+	if not cancelRE then return end
 	print("[K2] AUTO-CANCEL:", reason or "unknown")
-	pcall(function()
-		cancelRE:FireServer(CANCEL_GUID)
-	end)
+	pcall(function() cancelRE:FireServer(CANCEL_GUID) end)
 end
 
-------------------------------------------------------------
--- THEIR SIDE ONLY (non-target cancel)
-------------------------------------------------------------
 local function isUnderLocalSide(obj)
 	local cur = obj
-	while cur and cur ~= plr.PlayerGui do
+	while cur and cur ~= LocalPlayer.PlayerGui do
 		local n = string.lower(tostring(cur.Name))
 		if n:find("local", 1, true) or n:find("self", 1, true) or n:find("mine", 1, true)
-			or n:find("myoffer", 1, true) or n:find("my_side", 1, true)
-			or n == string.lower(plr.Name) or n == string.lower(plr.DisplayName)
-			or n:find("you", 1, true)
-		then
-			return true
-		end
+			or n:find("myoffer", 1, true) or n == string.lower(LocalPlayer.Name)
+			or n == string.lower(LocalPlayer.DisplayName) or n:find("you", 1, true)
+		then return true end
 		if cur:IsA("TextLabel") or cur:IsA("TextButton") then
 			local t = cur.Text
-			if t == plr.Name or t == plr.DisplayName then
-				return true
-			end
+			if t == LocalPlayer.Name or t == LocalPlayer.DisplayName then return true end
 		end
 		cur = cur.Parent
 	end
@@ -332,12 +244,7 @@ local function isUnderLocalSide(obj)
 end
 
 local function getOpponentRoot(tradeUI)
-	local candidates = {
-		"Other", "Others", "Opponent", "Their", "Them", "Enemy",
-		"RightOffer", "LeftOffer", "Player2", "Offer2", "RemotePlayer",
-		"OtherOffer", "TheirOffer", "Partner",
-	}
-	for _, name in ipairs(candidates) do
+	for _, name in ipairs({ "Other", "Others", "Opponent", "Their", "Them", "RightOffer", "OtherOffer", "TheirOffer", "Partner" }) do
 		local f = tradeUI:FindFirstChild(name, true)
 		if f then return f end
 	end
@@ -346,21 +253,16 @@ end
 
 local function scanTradeForNonTargets(tradeUI)
 	if not tradeUI or not tradeUI.Parent then return false end
-	if next(TargetBrainrots) == nil then return false end
-	if next(knownAnimalNames) == nil then return false end
+	if next(TargetBrainrots) == nil or next(knownAnimalNames) == nil then return false end
 	local root = getOpponentRoot(tradeUI)
 	for _, d in ipairs(root:GetDescendants()) do
 		if (d:IsA("TextLabel") or d:IsA("TextButton")) and not isUnderLocalSide(d) then
 			local text = d.Text
-			if type(text) == "string"
-				and #text >= 3
-				and knownAnimalNames[text] == true
-				and d.Visible ~= false
-				and d.AbsoluteSize.X > 2
-				and d.AbsoluteSize.Y > 2
+			if type(text) == "string" and #text >= 3 and knownAnimalNames[text] == true
+				and d.Visible ~= false and d.AbsoluteSize.X > 2 and d.AbsoluteSize.Y > 2
 			then
 				if not isTargetName(text) then
-					cancelTrade("Non-target on THEIR side: " .. text)
+					cancelTrade("Non-target: " .. text)
 					return true
 				end
 			end
@@ -370,153 +272,165 @@ local function scanTradeForNonTargets(tradeUI)
 end
 
 ------------------------------------------------------------
--- GUI
+-- BASE SCAN (money/s ranking)
 ------------------------------------------------------------
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BoaGuiSmall"
-ScreenGui.Parent = plr:WaitForChild("PlayerGui")
-ScreenGui.ResetOnSpawn = false
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Parent = ScreenGui
-MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-MainFrame.BackgroundColor3 = Theme.Panel
-MainFrame.BackgroundTransparency = 1
-MainFrame.Position = UDim2.new(0, 111, 0, 55)
-MainFrame.Size = UDim2.new(0, 0, 0, 0)
-MainFrame.BorderSizePixel = 0
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 14)
-
-local stroke = Instance.new("UIStroke")
-stroke.Thickness = 1.4
-stroke.Color = Theme.Glow
-stroke.Transparency = 0.05
-stroke.Parent = MainFrame
-
-local grad = Instance.new("UIGradient")
-grad.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Theme.DeepGlow),
-	ColorSequenceKeypoint.new(0.5, Theme.Moonlight),
-	ColorSequenceKeypoint.new(1, Theme.DeepGlow)
-}
-grad.Parent = stroke
-
-local Title = Instance.new("TextLabel")
-Title.Parent = MainFrame
-Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0, 12, 0, 8)
-Title.Size = UDim2.new(1, -14, 0, 18)
-Title.Font = FontTitle
-Title.Text = "K2 Auto Accept"
-Title.TextColor3 = Theme.Moonlight
-Title.TextSize = 12
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.TextTransparency = 1
-
-local DiscordLabel = Instance.new("TextButton")
-DiscordLabel.Parent = MainFrame
-DiscordLabel.BackgroundTransparency = 1
-DiscordLabel.Position = UDim2.new(0, 12, 0, 25)
-DiscordLabel.Size = UDim2.new(1, -14, 0, 10)
-DiscordLabel.Font = FontBody
-DiscordLabel.Text = "discord.gg/k2scripts"
-DiscordLabel.TextColor3 = Theme.Silver
-DiscordLabel.TextSize = 8
-DiscordLabel.TextXAlignment = Enum.TextXAlignment.Left
-DiscordLabel.TextTransparency = 1
-DiscordLabel.AutoButtonColor = false
-DiscordLabel.MouseButton1Click:Connect(function()
-	local fn = (getgenv and getgenv().setclipboard) or setclipboard or toclipboard
-	if fn then pcall(fn, "discord.gg/k2scripts") end
-	DiscordLabel.Text = "Copied!"
-	task.delay(1.1, function() DiscordLabel.Text = "discord.gg/k2scripts" end)
-end)
-
-local Separator = Instance.new("Frame")
-Separator.Parent = MainFrame
-Separator.BackgroundColor3 = Theme.Moonbeam
-Separator.BackgroundTransparency = 1
-Separator.BorderSizePixel = 0
-Separator.Position = UDim2.new(0, 6, 0, 39)
-Separator.Size = UDim2.new(1, -12, 0, 1)
-
-local ListeningLabel = Instance.new("TextLabel")
-ListeningLabel.Parent = MainFrame
-ListeningLabel.BackgroundTransparency = 1
-ListeningLabel.Position = UDim2.new(1, -85, 0, 10)
-ListeningLabel.Size = UDim2.new(0, 60, 0, 15)
-ListeningLabel.Font = FontBody
-ListeningLabel.Text = "listening.."
-ListeningLabel.TextColor3 = Theme.Moonbeam
-ListeningLabel.TextSize = 9
-ListeningLabel.TextXAlignment = Enum.TextXAlignment.Right
-ListeningLabel.TextTransparency = 1
-
-local MoonIcon = Instance.new("TextLabel")
-MoonIcon.Parent = MainFrame
-MoonIcon.BackgroundTransparency = 1
-MoonIcon.Position = UDim2.new(1, -24, 0, 7)
-MoonIcon.Size = UDim2.new(0, 16, 0, 16)
-MoonIcon.Font = FontTitle
-MoonIcon.Text = "💫"
-MoonIcon.TextColor3 = Theme.Moonlight
-MoonIcon.TextSize = 15
-MoonIcon.TextTransparency = 1
-
-------------------------------------------------------------
--- Drag
-------------------------------------------------------------
-local dragging, dragInput, dragStart, startPos
-MainFrame.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = MainFrame.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then dragging = false end
-		end)
+local function plotOwnedByLocalPlayer(plot)
+	if not plot then return false end
+	for _, key in ipairs({ "Owner", "OwnerUserId", "UserId", "OwnerId", "PlayerUserId" }) do
+		local v = plot:GetAttribute(key)
+		if v ~= nil then
+			if tonumber(v) == LP.UserId then return true end
+			if tostring(v) == LP.Name or tostring(v) == LP.DisplayName or tostring(v) == tostring(LP.UserId) then
+				return true
+			end
+		end
 	end
-end)
-MainFrame.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-		dragInput = input
+	for _, inst in ipairs(plot:GetDescendants()) do
+		local n = string.lower(inst.Name)
+		if n == "owner" or n == "owneruserid" or n == "userid" or n == "ownerid" then
+			if inst:IsA("ObjectValue") and inst.Value == LP then return true end
+			if (inst:IsA("NumberValue") or inst:IsA("IntValue")) and inst.Value == LP.UserId then return true end
+			if inst:IsA("StringValue") then
+				local s = inst.Value
+				if s == LP.Name or s == LP.DisplayName or s == tostring(LP.UserId) then return true end
+			end
+		end
 	end
-end)
-UserInputService.InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
-		local delta = input.Position - dragStart
-		MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	if plot.Name == tostring(LP.UserId) or plot.Name:find(tostring(LP.UserId), 1, true) then
+		return true
 	end
-end)
-
-TweenService:Create(MainFrame, TweenInfo.new(0.55, Enum.EasingStyle.Back), {
-	Size = UDim2.new(0, 190, 0, 48),
-	BackgroundTransparency = 0.08
-}):Play()
-
-local function fadeIn(obj, delayTime)
-	task.delay(delayTime, function()
-		TweenService:Create(obj, TweenInfo.new(0.35), { TextTransparency = 0 }):Play()
-	end)
+	return false
 end
-fadeIn(Title, 0.18)
-fadeIn(DiscordLabel, 0.24)
-fadeIn(ListeningLabel, 0.3)
-fadeIn(MoonIcon, 0.3)
-task.delay(0.3, function()
-	TweenService:Create(Separator, TweenInfo.new(0.4), { BackgroundTransparency = 0.5 }):Play()
-end)
 
-RunService.RenderStepped:Connect(function()
-	local t = tick()
-	MoonIcon.Rotation = (t * 90) % 360
-	ListeningLabel.TextTransparency = 0.15 + math.abs(math.sin(t * 1.2)) * 0.35
-	grad.Rotation = (t * 45) % 360
-end)
+local function ownerMatchesLocal(ownerField)
+	if ownerField == nil then return nil end
+	local oid = tonumber(ownerField)
+	if oid then return oid == LP.UserId end
+	local s = tostring(ownerField)
+	return s == LP.Name or s == LP.DisplayName or s == tostring(LP.UserId)
+end
+
+local function getMyPlotAndAnimals()
+	local plotsFolder = workspace:FindFirstChild("Plots")
+	if not plotsFolder then return nil, nil end
+	local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+	local syncFolder = ReplicatedStorage.Packages:FindFirstChild("Synchronizer")
+	local requestData = syncFolder and syncFolder:FindFirstChild("RequestData")
+	if not requestData then return nil, nil end
+
+	local candidates = {}
+	for _, plot in ipairs(plotsFolder:GetChildren()) do
+		if plotOwnedByLocalPlayer(plot) then table.insert(candidates, plot) end
+	end
+
+	local function fetchAnimals(plot)
+		local ok, data = pcall(function() return requestData:InvokeServer(plot.Name) end)
+		if not ok or type(data) ~= "table" or type(data.AnimalList) ~= "table" then return nil end
+		local ownerField = data.Owner or data.OwnerUserId or data.UserId or data.PlayerUserId
+		local match = ownerMatchesLocal(ownerField)
+		if match == false then return nil end
+		if match == nil and not plotOwnedByLocalPlayer(plot) then return nil end
+		return data.AnimalList
+	end
+
+	local verified = {}
+	local searchList = #candidates > 0 and candidates or plotsFolder:GetChildren()
+	for _, plot in ipairs(searchList) do
+		local animals = fetchAnimals(plot)
+		if animals then
+			local dist = math.huge
+			if hrp then
+				local okp, pos = pcall(function() return plot:GetPivot().Position end)
+				if okp and pos then dist = (pos - hrp.Position).Magnitude end
+			end
+			table.insert(verified, { plot = plot, animals = animals, dist = dist })
+		end
+	end
+	if #verified == 0 then return nil, nil end
+	table.sort(verified, function(a, b) return a.dist < b.dist end)
+	return verified[1].plot, verified[1].animals
+end
+
+local function getTraitMultiplier(traitName)
+	if not TraitsData or not traitName then return 0 end
+	local info = TraitsData[traitName]
+	if not info then
+		local key = traitName:lower():gsub("%s+", "")
+		for k, v in pairs(TraitsData) do
+			if type(k) == "string" and k:lower():gsub("%s+", "") == key then info = v break end
+		end
+	end
+	if type(info) ~= "table" then return 0 end
+	local tm = info.MultiplierModifier or info.Multiplier or info.modifier or info.GenerationMultiplier
+	return (type(tm) == "number" and tm > 0) and tm or 0
+end
+
+local function getMutationMultiplier(mutName)
+	if not mutName or mutName == "" or mutName == "None" or mutName == "Default" then return 1 end
+	if MUTATION_MULT[mutName] then return MUTATION_MULT[mutName] end
+	local key = mutName:lower():gsub("%s+", "")
+	for name, mult in pairs(MUTATION_MULT) do
+		if name:lower():gsub("%s+", "") == key then return mult end
+	end
+	return 1
+end
+
+local function getGeneration(data)
+	local index = data.Index
+	local base = 0
+	if AnimalsData and AnimalsData[index] and type(AnimalsData[index].Generation) == "number" then
+		base = AnimalsData[index].Generation
+	end
+	if base <= 0 then return 0 end
+	local gen = base * getMutationMultiplier(data.Mutation)
+	local traits = data.Traits
+	if type(traits) == "table" then
+		for _, t in pairs(traits) do
+			local traitName = type(t) == "string" and t or (type(t) == "table" and (t.Name or t.Index or t.Trait or t.Id))
+			local tm = getTraitMultiplier(traitName)
+			if tm > 0 then gen = gen + (base * tm) end
+		end
+	end
+	return gen
+end
+
+local function formatGen(genVal)
+	if NumberUtils and NumberUtils.Format then
+		return NumberUtils.Format(genVal) .. "/s"
+	end
+	if genVal >= 1e12 then return string.format("%.1fT/s", genVal / 1e12)
+	elseif genVal >= 1e9 then return string.format("%.1fB/s", genVal / 1e9)
+	elseif genVal >= 1e6 then return string.format("%.1fM/s", genVal / 1e6)
+	elseif genVal >= 1e3 then return string.format("%.1fK/s", genVal / 1e3)
+	end
+	return tostring(math.floor(genVal)) .. "/s"
+end
+
+local function scanBaseRanked()
+	local _, animalList = getMyPlotAndAnimals()
+	local results = {}
+	if type(animalList) ~= "table" then return results end
+	for slot, data in pairs(animalList) do
+		if type(data) == "table" and data.Index then
+			local info = AnimalsData and AnimalsData[data.Index]
+			local displayName = (info and info.DisplayName) or data.Index
+			local genVal = getGeneration(data)
+			local mut = data.Mutation or "None"
+			table.insert(results, {
+				name = displayName,
+				gen = genVal,
+				genStr = formatGen(genVal),
+				mutation = mut,
+				slot = tostring(slot),
+			})
+		end
+	end
+	table.sort(results, function(a, b) return a.gen > b.gen end)
+	return results
+end
 
 ------------------------------------------------------------
--- Click helper
+-- CLICK
 ------------------------------------------------------------
 local function clickGui(btn)
 	if not btn then return end
@@ -533,132 +447,491 @@ local function clickGui(btn)
 end
 
 ------------------------------------------------------------
--- AUTO ACCEPT: AcceptInvite RF (no gen.v) + UI fallback
+-- FULL SCREEN GUI
 ------------------------------------------------------------
-local function doAcceptInvite(fromUserId)
-	if not acceptInviteRF then
-		resolveRemotes()
-	end
-	if acceptInviteRF then
-		local ok = pcall(function()
-			acceptInviteRF:InvokeServer(ACCEPT_INVITE_GUID, fromUserId)
-		end)
-		if ok then
-			print("[K2] AcceptInvite RF ok", fromUserId or "")
-			ListeningLabel.Text = "accepted"
-			MoonIcon.Text = "✅"
-			return true
-		end
-	end
-	return false
+local statusDot, listHolder, listLayout, totalLabel
+
+local function corner(obj, r)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, r or 12)
+	c.Parent = obj
+	return c
 end
 
--- UI path: DuelsMachinePrompt "Trade Request" → Yes
+local function buildGui()
+	local parent = (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
+	local old = parent:FindFirstChild("K2AutoAcceptFS")
+	if old then old:Destroy() end
+	local pgOld = LocalPlayer.PlayerGui:FindFirstChild("K2AutoAcceptFS")
+	if pgOld then pgOld:Destroy() end
+
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "K2AutoAcceptFS"
+	gui.ResetOnSpawn = false
+	gui.IgnoreGuiInset = true
+	gui.DisplayOrder = 50
+	gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+	-- full opaque night sky
+	local root = Instance.new("Frame")
+	root.Name = "Root"
+	root.Size = UDim2.fromScale(1, 1)
+	root.BackgroundColor3 = CONFIG.SkyTop
+	root.BorderSizePixel = 0
+	root.ClipsDescendants = true
+	root.Parent = gui
+
+	local skyGrad = Instance.new("UIGradient")
+	skyGrad.Rotation = 90
+	skyGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, CONFIG.SkyTop),
+		ColorSequenceKeypoint.new(0.5, CONFIG.SkyMid),
+		ColorSequenceKeypoint.new(1, CONFIG.SkyBottom),
+	})
+	skyGrad.Parent = root
+
+	-- soft stars
+	for i = 1, 60 do
+		local s = Instance.new("Frame")
+		s.Size = UDim2.new(0, math.random(1, 3), 0, math.random(1, 3))
+		s.Position = UDim2.new(math.random(), 0, math.random(), 0)
+		s.BackgroundColor3 = Color3.fromRGB(220, 230, 255)
+		s.BackgroundTransparency = math.random(20, 70) / 100
+		s.BorderSizePixel = 0
+		s.ZIndex = 1
+		s.Parent = root
+		corner(s, 99)
+	end
+
+	-- vignette
+	local vig = Instance.new("Frame")
+	vig.Size = UDim2.fromScale(1, 1)
+	vig.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	vig.BackgroundTransparency = 0.5
+	vig.BorderSizePixel = 0
+	vig.ZIndex = 2
+	vig.Parent = root
+	local vg = Instance.new("UIGradient")
+	vg.Rotation = 90
+	vg.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.2),
+		NumberSequenceKeypoint.new(0.4, 0.9),
+		NumberSequenceKeypoint.new(0.7, 0.9),
+		NumberSequenceKeypoint.new(1, 0.15),
+	})
+	vg.Parent = vig
+
+	-- TOP LEFT: logo + name (small)
+	local brand = Instance.new("Frame")
+	brand.BackgroundTransparency = 1
+	brand.Position = UDim2.new(0, 22, 0, 18)
+	brand.Size = UDim2.new(0, 220, 0, 44)
+	brand.ZIndex = 10
+	brand.Parent = root
+
+	local logoBox = Instance.new("Frame")
+	logoBox.Size = UDim2.new(0, 36, 0, 36)
+	logoBox.Position = UDim2.new(0, 0, 0.5, -18)
+	logoBox.BackgroundColor3 = Color3.fromRGB(30, 36, 60)
+	logoBox.BorderSizePixel = 0
+	logoBox.ZIndex = 10
+	logoBox.Parent = brand
+	corner(logoBox, 10)
+	local logoStroke = Instance.new("UIStroke", logoBox)
+	logoStroke.Color = CONFIG.Accent
+	logoStroke.Thickness = 1.4
+	logoStroke.Transparency = 0.25
+
+	local logoTxt = Instance.new("TextLabel", logoBox)
+	logoTxt.Size = UDim2.fromScale(1, 1)
+	logoTxt.BackgroundTransparency = 1
+	logoTxt.Text = "K2"
+	logoTxt.Font = Enum.Font.GothamBlack
+	logoTxt.TextSize = 13
+	logoTxt.TextColor3 = CONFIG.Glow
+	logoTxt.ZIndex = 11
+
+	local brandName = Instance.new("TextLabel", brand)
+	brandName.Position = UDim2.new(0, 46, 0, 2)
+	brandName.Size = UDim2.new(1, -46, 0, 20)
+	brandName.BackgroundTransparency = 1
+	brandName.Text = "K2 Auto Accept"
+	brandName.Font = Enum.Font.GothamBold
+	brandName.TextSize = 15
+	brandName.TextColor3 = Color3.new(1, 1, 1)
+	brandName.TextXAlignment = Enum.TextXAlignment.Left
+	brandName.ZIndex = 10
+
+	local brandSub = Instance.new("TextLabel", brand)
+	brandSub.Position = UDim2.new(0, 46, 0, 22)
+	brandSub.Size = UDim2.new(1, -46, 0, 16)
+	brandSub.BackgroundTransparency = 1
+	brandSub.Text = CONFIG.Discord
+	brandSub.Font = Enum.Font.Gotham
+	brandSub.TextSize = 11
+	brandSub.TextColor3 = CONFIG.Muted
+	brandSub.TextXAlignment = Enum.TextXAlignment.Left
+	brandSub.ZIndex = 10
+
+	-- CENTER status
+	local center = Instance.new("Frame")
+	center.BackgroundTransparency = 1
+	center.AnchorPoint = Vector2.new(0.5, 0.5)
+	center.Position = UDim2.new(0.5, 0, 0.28, 0)
+	center.Size = UDim2.new(0, 520, 0, 90)
+	center.ZIndex = 10
+	center.Parent = root
+
+	local bigStatus = Instance.new("TextLabel", center)
+	bigStatus.Size = UDim2.new(1, 0, 0, 36)
+	bigStatus.BackgroundTransparency = 1
+	bigStatus.Text = "Auto Accept Active, Goodnight."
+	bigStatus.Font = Enum.Font.GothamBold
+	bigStatus.TextSize = 26
+	bigStatus.TextColor3 = CONFIG.Glow
+	bigStatus.ZIndex = 10
+
+	local statusRow = Instance.new("TextLabel", center)
+	statusRow.Position = UDim2.new(0, 0, 0, 44)
+	statusRow.Size = UDim2.new(1, 0, 0, 22)
+	statusRow.BackgroundTransparency = 1
+	statusRow.Text = "● Active"
+	statusRow.Font = Enum.Font.GothamMedium
+	statusRow.TextSize = 14
+	statusRow.TextColor3 = CONFIG.Success
+	statusRow.ZIndex = 10
+	statusDot = statusRow
+
+	local toggleBtn = Instance.new("TextButton", center)
+	toggleBtn.AnchorPoint = Vector2.new(0.5, 0)
+	toggleBtn.Position = UDim2.new(0.5, 0, 0, 72)
+	toggleBtn.Size = UDim2.new(0, 100, 0, 28)
+	toggleBtn.BackgroundColor3 = CONFIG.Success
+	toggleBtn.Text = "ON"
+	toggleBtn.Font = Enum.Font.GothamBold
+	toggleBtn.TextSize = 12
+	toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+	toggleBtn.BorderSizePixel = 0
+	toggleBtn.ZIndex = 11
+	toggleBtn.AutoButtonColor = false
+	corner(toggleBtn, 14)
+	toggleBtn.MouseButton1Click:Connect(function()
+		acceptEnabled = not acceptEnabled
+		if acceptEnabled then
+			toggleBtn.BackgroundColor3 = CONFIG.Success
+			toggleBtn.Text = "ON"
+			statusDot.Text = "● Active"
+			statusDot.TextColor3 = CONFIG.Success
+			bigStatus.Text = "Auto Accept Active, Goodnight."
+		else
+			toggleBtn.BackgroundColor3 = CONFIG.Error
+			toggleBtn.Text = "OFF"
+			statusDot.Text = "● Paused"
+			statusDot.TextColor3 = CONFIG.Error
+			bigStatus.Text = "Auto Accept Paused."
+		end
+	end)
+
+	-- LIST CARD (non-interactive display)
+	local card = Instance.new("Frame")
+	card.Name = "BrainrotList"
+	card.AnchorPoint = Vector2.new(0.5, 0)
+	card.Position = UDim2.new(0.5, 0, 0.42, 0)
+	card.Size = UDim2.new(0, 420, 0, 300)
+	card.BackgroundColor3 = CONFIG.Card
+	card.BackgroundTransparency = 0.15
+	card.BorderSizePixel = 0
+	card.ZIndex = 10
+	card.ClipsDescendants = true
+	card.Parent = root
+	corner(card, 16)
+	local cardStroke = Instance.new("UIStroke", card)
+	cardStroke.Color = CONFIG.CardBorder
+	cardStroke.Thickness = 1.5
+	cardStroke.Transparency = 0.35
+
+	local listTitle = Instance.new("TextLabel", card)
+	listTitle.BackgroundTransparency = 1
+	listTitle.Position = UDim2.new(0, 16, 0, 12)
+	listTitle.Size = UDim2.new(1, -32, 0, 22)
+	listTitle.Text = "Your Base  ·  Best → Worst"
+	listTitle.Font = Enum.Font.GothamBold
+	listTitle.TextSize = 13
+	listTitle.TextColor3 = CONFIG.Accent
+	listTitle.TextXAlignment = Enum.TextXAlignment.Left
+	listTitle.ZIndex = 11
+
+	totalLabel = Instance.new("TextLabel", card)
+	totalLabel.BackgroundTransparency = 1
+	totalLabel.Position = UDim2.new(0, 16, 0, 34)
+	totalLabel.Size = UDim2.new(1, -32, 0, 16)
+	totalLabel.Text = "Scanning…"
+	totalLabel.Font = Enum.Font.Gotham
+	totalLabel.TextSize = 11
+	totalLabel.TextColor3 = CONFIG.Muted
+	totalLabel.TextXAlignment = Enum.TextXAlignment.Left
+	totalLabel.ZIndex = 11
+
+	local scroll = Instance.new("ScrollingFrame", card)
+	scroll.Name = "ListScroll"
+	scroll.Position = UDim2.new(0, 12, 0, 56)
+	scroll.Size = UDim2.new(1, -24, 1, -68)
+	scroll.BackgroundTransparency = 1
+	scroll.BorderSizePixel = 0
+	scroll.ScrollBarThickness = 3
+	scroll.ScrollBarImageColor3 = CONFIG.Accent
+	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	scroll.ScrollingEnabled = true
+	scroll.Active = true
+	scroll.Selectable = false
+	scroll.ZIndex = 11
+	-- block accidental interaction with rows
+	scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+	listHolder = Instance.new("Frame", scroll)
+	listHolder.BackgroundTransparency = 1
+	listHolder.Size = UDim2.new(1, 0, 0, 0)
+	listHolder.AutomaticSize = Enum.AutomaticSize.Y
+	listHolder.ZIndex = 11
+
+	listLayout = Instance.new("UIListLayout", listHolder)
+	listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	listLayout.Padding = UDim.new(0, 6)
+
+	listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		scroll.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 8)
+	end)
+
+	-- bottom tip
+	local tip = Instance.new("TextLabel", root)
+	tip.AnchorPoint = Vector2.new(0.5, 1)
+	tip.Position = UDim2.new(0.5, 0, 1, -16)
+	tip.Size = UDim2.new(0, 400, 0, 18)
+	tip.BackgroundTransparency = 1
+	tip.Text = "List updates every 30s  ·  Non-targets auto-cancel"
+	tip.Font = Enum.Font.Gotham
+	tip.TextSize = 11
+	tip.TextColor3 = CONFIG.Muted
+	tip.ZIndex = 10
+end
+
+local function clearList()
+	if not listHolder then return end
+	for _, c in ipairs(listHolder:GetChildren()) do
+		if not c:IsA("UIListLayout") then c:Destroy() end
+	end
+end
+
+local function refreshList()
+	local ranked = scanBaseRanked()
+	clearList()
+	local total = 0
+	for i, item in ipairs(ranked) do
+		total += item.gen
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(1, 0, 0, 34)
+		row.BackgroundColor3 = Color3.fromRGB(22, 26, 44)
+		row.BackgroundTransparency = 0.25
+		row.BorderSizePixel = 0
+		row.ZIndex = 12
+		row.LayoutOrder = i
+		row.Parent = listHolder
+		corner(row, 8)
+
+		-- non-interactive shield
+		local block = Instance.new("TextButton", row)
+		block.Size = UDim2.fromScale(1, 1)
+		block.BackgroundTransparency = 1
+		block.Text = ""
+		block.ZIndex = 15
+		block.Active = false
+		block.AutoButtonColor = false
+
+		local rank = Instance.new("TextLabel", row)
+		rank.Size = UDim2.new(0, 28, 1, 0)
+		rank.Position = UDim2.new(0, 8, 0, 0)
+		rank.BackgroundTransparency = 1
+		rank.Text = "#" .. i
+		rank.Font = Enum.Font.GothamBold
+		rank.TextSize = 12
+		rank.TextColor3 = (i <= 3) and CONFIG.Accent or CONFIG.Muted
+		rank.TextXAlignment = Enum.TextXAlignment.Left
+		rank.ZIndex = 13
+
+		local name = Instance.new("TextLabel", row)
+		name.Size = UDim2.new(1, -140, 1, 0)
+		name.Position = UDim2.new(0, 40, 0, 0)
+		name.BackgroundTransparency = 1
+		name.Text = item.name
+		name.Font = Enum.Font.GothamMedium
+		name.TextSize = 12
+		name.TextColor3 = Color3.new(1, 1, 1)
+		name.TextXAlignment = Enum.TextXAlignment.Left
+		name.TextTruncate = Enum.TextTruncate.AtEnd
+		name.ZIndex = 13
+
+		local gen = Instance.new("TextLabel", row)
+		gen.Size = UDim2.new(0, 90, 1, 0)
+		gen.Position = UDim2.new(1, -98, 0, 0)
+		gen.BackgroundTransparency = 1
+		gen.Text = "$" .. item.genStr
+		gen.Font = Enum.Font.GothamBold
+		gen.TextSize = 12
+		gen.TextColor3 = CONFIG.Success
+		gen.TextXAlignment = Enum.TextXAlignment.Right
+		gen.ZIndex = 13
+	end
+	if totalLabel then
+		if #ranked == 0 then
+			totalLabel.Text = "No brainrots found on base"
+		else
+			totalLabel.Text = string.format("%d brainrots  ·  total $%s", #ranked, formatGen(total):gsub("/s", "") .. "/s")
+		end
+	end
+end
+
+------------------------------------------------------------
+-- ACCEPT LOGIC (Chocola)
+------------------------------------------------------------
+local function acceptTradePrompt(prompt)
+	if not acceptEnabled then return end
+	local yes = prompt:FindFirstChild("Yes", true)
+	if yes then
+		print("[K2] Trade Request → Yes")
+		clickGui(yes)
+	end
+end
+
+local function tryReadyButton()
+	if not acceptEnabled then return end
+	local pg = LocalPlayer:FindFirstChild("PlayerGui")
+	if not pg then return end
+	local TradeLiveTrade = pg:FindFirstChild("TradeLiveTrade")
+	if not TradeLiveTrade then return end
+	local inner = TradeLiveTrade:FindFirstChild("TradeLiveTrade", true) or TradeLiveTrade
+	if scanTradeForNonTargets(inner) then return end
+	local other = inner:FindFirstChild("Other", true)
+	if other then
+		local readyBtn = other:FindFirstChild("ReadyButton")
+		if readyBtn then clickGui(readyBtn) end
+	end
+	if readyRE then pcall(function() readyRE:FireServer(READY_GUID) end) end
+	if acceptRE then pcall(function() acceptRE:FireServer(ACCEPT_GUID) end) end
+end
+
+local function placeAFKTag()
+	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	local head = char:FindFirstChild("Head")
+	if not head or head:FindFirstChild("AFKTag") then return end
+	local bb = Instance.new("BillboardGui")
+	bb.Name = "AFKTag"
+	bb.Size = UDim2.new(0, 200, 0, 50)
+	bb.StudsOffset = Vector3.new(0, 2.5, 0)
+	bb.AlwaysOnTop = true
+	bb.Parent = head
+	local tl = Instance.new("TextLabel")
+	tl.Size = UDim2.fromScale(1, 1)
+	tl.BackgroundTransparency = 1
+	tl.Text = "K2 Auto Accept AFK"
+	tl.TextColor3 = CONFIG.Accent
+	tl.TextStrokeTransparency = 0
+	tl.TextScaled = true
+	tl.Font = Enum.Font.GothamBold
+	tl.Parent = bb
+end
+
+------------------------------------------------------------
+-- BOOT
+------------------------------------------------------------
+print("[K2] Full-screen Auto Accept loading…")
+buildGui()
+task.defer(refreshList)
+
+-- scan every 30s
 task.spawn(function()
-	local pg = plr:WaitForChild("PlayerGui")
-	local root = pg:FindFirstChild("DuelsMachinePrompt") or pg:WaitForChild("DuelsMachinePrompt", 30)
-	if not root then
-		warn("[K2] DuelsMachinePrompt not found — waiting")
-		root = pg:WaitForChild("DuelsMachinePrompt", 120)
+	while task.wait(30) do
+		pcall(refreshList)
 	end
-	if not root then
-		warn("[K2] DuelsMachinePrompt still missing")
-		return
-	end
-	local inner = root:FindFirstChild("DuelsMachinePrompt") or root
-	local function tryAcceptPrompt(prompt)
-		local label = prompt:FindFirstChild("Label", true)
-		if label and label.Text == "Trade Request" then
-			local yes = prompt:FindFirstChild("Yes", true)
-			if yes then
-				print("[K2] Trade Request prompt → Yes")
-				ListeningLabel.Text = "accepting.."
-				MoonIcon.Text = "✅"
-				clickGui(yes)
+end)
+
+-- anti-afk jump 45s
+task.spawn(function()
+	while task.wait(45) do
+		local char = LocalPlayer.Character
+		if char then
+			local hum = char:FindFirstChildOfClass("Humanoid")
+			if hum and hum.Health > 0 then
+				hum:ChangeState(Enum.HumanoidStateType.Jumping)
+			end
+		end
+		if statusDot and acceptEnabled and statusDot.Text ~= "🔄 AFK" then
+			statusDot.Text = "🔄 AFK"
+			statusDot.TextColor3 = Color3.fromRGB(255, 200, 0)
+			task.wait(2)
+			if acceptEnabled then
+				statusDot.Text = "● Active"
+				statusDot.TextColor3 = CONFIG.Success
 			end
 		end
 	end
+end)
+
+-- anti-restart click 60s
+task.spawn(function()
+	while task.wait(60) do
+		pcall(function()
+			VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+			task.wait(0.1)
+			VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+		end)
+	end
+end)
+
+task.delay(2, function()
+	local pg = LocalPlayer:WaitForChild("PlayerGui")
+	local root = pg:FindFirstChild("DuelsMachinePrompt") or pg:WaitForChild("DuelsMachinePrompt", 60)
+	if not root then
+		warn("[K2] DuelsMachinePrompt not found")
+		return
+	end
+	local inner = root:FindFirstChild("DuelsMachinePrompt") or root
+	placeAFKTag()
+	LocalPlayer.CharacterAdded:Connect(function()
+		task.wait(1)
+		placeAFKTag()
+	end)
+
+	task.spawn(function()
+		while task.wait(0.5) do
+			tryReadyButton()
+		end
+	end)
+
 	inner.ChildAdded:Connect(function(child)
 		if child.Name == "Prompt" then
-			task.defer(function() tryAcceptPrompt(child) end)
+			task.defer(function()
+				local label = child:FindFirstChild("Label", true)
+				if label and label.Text == "Trade Request" then
+					acceptTradePrompt(child)
+				end
+			end)
 		end
 	end)
 	for _, child in ipairs(inner:GetChildren()) do
 		if child.Name == "Prompt" then
-			tryAcceptPrompt(child)
+			local label = child:FindFirstChild("Label", true)
+			if label and label.Text == "Trade Request" then
+				acceptTradePrompt(child)
+			end
 		end
 	end
 	print("[K2] DuelsMachinePrompt hooked")
 end)
 
-------------------------------------------------------------
--- READY + ACCEPT when trade UI is open
-------------------------------------------------------------
-local tradeBusy = false
-local function fireReadyAccept()
-	if not readyRE or not acceptRE then
-		resolveRemotes()
-	end
-	if readyRE then
-		pcall(function() readyRE:FireServer(READY_GUID) end)
-	end
-	task.wait(0.15)
-	if acceptRE then
-		pcall(function() acceptRE:FireServer(ACCEPT_GUID) end)
-	end
-end
-
-local function watchTradeUI()
-	local pg = plr:WaitForChild("PlayerGui")
-	local function onTrade(gui)
-		if tradeBusy then return end
-		tradeBusy = true
-		ListeningLabel.Text = "in trade"
-		MoonIcon.Text = "🤝"
-		task.spawn(function()
-			-- scan a few times for non-targets
-			for _ = 1, 8 do
-				if not gui or not gui.Parent then break end
-				if scanTradeForNonTargets(gui) then break end
-				fireReadyAccept()
-				task.wait(0.35)
-			end
-			tradeBusy = false
-			ListeningLabel.Text = "listening.."
-			MoonIcon.Text = "💫"
-		end)
-	end
-
-	local names = { "Trade", "Trading", "TradeUI", "LiveTrade", "TradeFrame" }
-	local function check(obj)
-		if not obj then return end
-		local n = obj.Name
-		for _, want in ipairs(names) do
-			if n == want or n:lower():find("trade", 1, true) then
-				task.defer(function() onTrade(obj) end)
-				return
-			end
-		end
-	end
-	pg.DescendantAdded:Connect(function(d)
-		if d:IsA("Frame") or d:IsA("ScreenGui") then
-			check(d)
-		end
-	end)
-	for _, d in ipairs(pg:GetDescendants()) do
-		if d:IsA("Frame") then check(d) end
-	end
-end
-task.spawn(watchTradeUI)
-
-------------------------------------------------------------
--- Export helpers for other scripts (tracker can call SendInvite)
-------------------------------------------------------------
 pcall(function()
 	local env = (typeof(getgenv) == "function" and getgenv()) or _G
 	env.K2SendInvite = SendInvite
-	env.K2AcceptInvite = doAcceptInvite
 	env.K2CancelTrade = cancelTrade
 end)
 
-print("[K2 Auto Accept] loaded · CreateInvite path/GUID (no gen.v) · AcceptInvite + UI Yes")
+print("[K2 Auto Accept FS] loaded")
