@@ -459,11 +459,12 @@ local function corner(obj, r)
 end
 
 local function buildGui()
-	local parent = (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
-	local old = parent:FindFirstChild("K2AutoAcceptFS")
+	local old = LocalPlayer.PlayerGui:FindFirstChild("K2AutoAcceptFS")
 	if old then old:Destroy() end
-	local pgOld = LocalPlayer.PlayerGui:FindFirstChild("K2AutoAcceptFS")
-	if pgOld then pgOld:Destroy() end
+	pcall(function()
+		local o = (CoreGui:FindFirstChild("RobloxGui") or CoreGui):FindFirstChild("K2AutoAcceptFS")
+		if o then o:Destroy() end
+	end)
 
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "K2AutoAcceptFS"
@@ -472,247 +473,237 @@ local function buildGui()
 	gui.DisplayOrder = 50
 	gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-	-- full opaque night sky
+	-- FULL SCREEN dark space (same language as K2 discord invite)
 	local root = Instance.new("Frame")
 	root.Name = "Root"
 	root.Size = UDim2.fromScale(1, 1)
-	root.BackgroundColor3 = CONFIG.SkyTop
+	root.BackgroundColor3 = Color3.fromRGB(4, 5, 10)
+	root.BackgroundTransparency = 0
 	root.BorderSizePixel = 0
-	root.ClipsDescendants = true
 	root.Parent = gui
 
-	local skyGrad = Instance.new("UIGradient")
-	skyGrad.Rotation = 90
-	skyGrad.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, CONFIG.SkyTop),
-		ColorSequenceKeypoint.new(0.5, CONFIG.SkyMid),
-		ColorSequenceKeypoint.new(1, CONFIG.SkyBottom),
-	})
-	skyGrad.Parent = root
+	-- soft vignette
+	do
+		local v = Instance.new("Frame")
+		v.Size = UDim2.fromScale(1, 1)
+		v.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		v.BackgroundTransparency = 0.25
+		v.BorderSizePixel = 0
+		v.ZIndex = 2
+		v.Parent = root
+		local g = Instance.new("UIGradient")
+		g.Rotation = 90
+		g.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.1),
+			NumberSequenceKeypoint.new(0.35, 0.7),
+			NumberSequenceKeypoint.new(0.65, 0.7),
+			NumberSequenceKeypoint.new(1, 0.15),
+		})
+		g.Parent = v
+	end
 
-	-- soft stars
+	-- falling star particles
+	local particles = {}
 	for i = 1, 60 do
 		local s = Instance.new("Frame")
-		s.Size = UDim2.new(0, math.random(1, 3), 0, math.random(1, 3))
+		local sz = math.random(1, 3)
+		s.Size = UDim2.fromOffset(sz, sz)
 		s.Position = UDim2.new(math.random(), 0, math.random(), 0)
-		s.BackgroundColor3 = Color3.fromRGB(220, 230, 255)
-		s.BackgroundTransparency = math.random(20, 70) / 100
+		s.BackgroundColor3 = Color3.fromRGB(230, 235, 255)
+		s.BackgroundTransparency = math.random(25, 75) / 100
 		s.BorderSizePixel = 0
 		s.ZIndex = 1
 		s.Parent = root
 		corner(s, 99)
+		particles[i] = {frame = s, speed = 0.0012 + math.random() * 0.0035, drift = (math.random() - 0.5) * 0.0009}
 	end
-
-	-- vignette
-	local vig = Instance.new("Frame")
-	vig.Size = UDim2.fromScale(1, 1)
-	vig.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	vig.BackgroundTransparency = 0.5
-	vig.BorderSizePixel = 0
-	vig.ZIndex = 2
-	vig.Parent = root
-	local vg = Instance.new("UIGradient")
-	vg.Rotation = 90
-	vg.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.2),
-		NumberSequenceKeypoint.new(0.4, 0.9),
-		NumberSequenceKeypoint.new(0.7, 0.9),
-		NumberSequenceKeypoint.new(1, 0.15),
-	})
-	vg.Parent = vig
-
-	-- TOP LEFT: logo + name (small)
-	local brand = Instance.new("Frame")
-	brand.BackgroundTransparency = 1
-	brand.Position = UDim2.new(0, 22, 0, 18)
-	brand.Size = UDim2.new(0, 220, 0, 44)
-	brand.ZIndex = 10
-	brand.Parent = root
-
-	local logoBox = Instance.new("Frame")
-	logoBox.Size = UDim2.new(0, 36, 0, 36)
-	logoBox.Position = UDim2.new(0, 0, 0.5, -18)
-	logoBox.BackgroundColor3 = Color3.fromRGB(30, 36, 60)
-	logoBox.BorderSizePixel = 0
-	logoBox.ZIndex = 10
-	logoBox.Parent = brand
-	corner(logoBox, 10)
-	local logoStroke = Instance.new("UIStroke", logoBox)
-	logoStroke.Color = CONFIG.Accent
-	logoStroke.Thickness = 1.4
-	logoStroke.Transparency = 0.25
-
-	local logoTxt = Instance.new("TextLabel", logoBox)
-	logoTxt.Size = UDim2.fromScale(1, 1)
-	logoTxt.BackgroundTransparency = 1
-	logoTxt.Text = "K2"
-	logoTxt.Font = Enum.Font.GothamBlack
-	logoTxt.TextSize = 13
-	logoTxt.TextColor3 = CONFIG.Glow
-	logoTxt.ZIndex = 11
-
-	local brandName = Instance.new("TextLabel", brand)
-	brandName.Position = UDim2.new(0, 46, 0, 2)
-	brandName.Size = UDim2.new(1, -46, 0, 20)
-	brandName.BackgroundTransparency = 1
-	brandName.Text = "K2 Auto Accept"
-	brandName.Font = Enum.Font.GothamBold
-	brandName.TextSize = 15
-	brandName.TextColor3 = Color3.new(1, 1, 1)
-	brandName.TextXAlignment = Enum.TextXAlignment.Left
-	brandName.ZIndex = 10
-
-	local brandSub = Instance.new("TextLabel", brand)
-	brandSub.Position = UDim2.new(0, 46, 0, 22)
-	brandSub.Size = UDim2.new(1, -46, 0, 16)
-	brandSub.BackgroundTransparency = 1
-	brandSub.Text = CONFIG.Discord
-	brandSub.Font = Enum.Font.Gotham
-	brandSub.TextSize = 11
-	brandSub.TextColor3 = CONFIG.Muted
-	brandSub.TextXAlignment = Enum.TextXAlignment.Left
-	brandSub.ZIndex = 10
-
-	-- CENTER status
-	local center = Instance.new("Frame")
-	center.BackgroundTransparency = 1
-	center.AnchorPoint = Vector2.new(0.5, 0.5)
-	center.Position = UDim2.new(0.5, 0, 0.28, 0)
-	center.Size = UDim2.new(0, 520, 0, 90)
-	center.ZIndex = 10
-	center.Parent = root
-
-	local bigStatus = Instance.new("TextLabel", center)
-	bigStatus.Size = UDim2.new(1, 0, 0, 36)
-	bigStatus.BackgroundTransparency = 1
-	bigStatus.Text = "Auto Accept Active, Goodnight."
-	bigStatus.Font = Enum.Font.GothamBold
-	bigStatus.TextSize = 26
-	bigStatus.TextColor3 = CONFIG.Glow
-	bigStatus.ZIndex = 10
-
-	local statusRow = Instance.new("TextLabel", center)
-	statusRow.Position = UDim2.new(0, 0, 0, 44)
-	statusRow.Size = UDim2.new(1, 0, 0, 22)
-	statusRow.BackgroundTransparency = 1
-	statusRow.Text = "● Active"
-	statusRow.Font = Enum.Font.GothamMedium
-	statusRow.TextSize = 14
-	statusRow.TextColor3 = CONFIG.Success
-	statusRow.ZIndex = 10
-	statusDot = statusRow
-
-	local toggleBtn = Instance.new("TextButton", center)
-	toggleBtn.AnchorPoint = Vector2.new(0.5, 0)
-	toggleBtn.Position = UDim2.new(0.5, 0, 0, 72)
-	toggleBtn.Size = UDim2.new(0, 100, 0, 28)
-	toggleBtn.BackgroundColor3 = CONFIG.Success
-	toggleBtn.Text = "ON"
-	toggleBtn.Font = Enum.Font.GothamBold
-	toggleBtn.TextSize = 12
-	toggleBtn.TextColor3 = Color3.new(1, 1, 1)
-	toggleBtn.BorderSizePixel = 0
-	toggleBtn.ZIndex = 11
-	toggleBtn.AutoButtonColor = false
-	corner(toggleBtn, 14)
-	toggleBtn.MouseButton1Click:Connect(function()
-		acceptEnabled = not acceptEnabled
-		if acceptEnabled then
-			toggleBtn.BackgroundColor3 = CONFIG.Success
-			toggleBtn.Text = "ON"
-			statusDot.Text = "● Active"
-			statusDot.TextColor3 = CONFIG.Success
-			bigStatus.Text = "Auto Accept Active, Goodnight."
-		else
-			toggleBtn.BackgroundColor3 = CONFIG.Error
-			toggleBtn.Text = "OFF"
-			statusDot.Text = "● Paused"
-			statusDot.TextColor3 = CONFIG.Error
-			bigStatus.Text = "Auto Accept Paused."
+	RunService.RenderStepped:Connect(function()
+		if not gui.Parent then return end
+		for _, p in ipairs(particles) do
+			local f = p.frame
+			local x = f.Position.X.Scale + p.drift
+			local y = f.Position.Y.Scale + p.speed
+			if y > 1.05 then y = -0.02; x = math.random() end
+			if x < -0.02 then x = 1.02 elseif x > 1.02 then x = -0.02 end
+			f.Position = UDim2.new(x, 0, y, 0)
 		end
 	end)
 
-	-- LIST CARD (non-interactive display)
+	local FontTitle = Enum.Font.GothamBlack
+	local FontBody = Enum.Font.GothamMedium
+	local Accent = Color3.fromRGB(160, 190, 255)
+	local TextC = Color3.fromRGB(250, 252, 255)
+	local Muted = Color3.fromRGB(155, 170, 200)
+
+	-- CENTER stack
+	local center = Instance.new("Frame")
+	center.AnchorPoint = Vector2.new(0.5, 0.5)
+	center.Position = UDim2.fromScale(0.5, 0.48)
+	center.Size = UDim2.fromOffset(520, 160)
+	center.BackgroundTransparency = 1
+	center.ZIndex = 10
+	center.Parent = root
+
+	local bigStatus = Instance.new("TextLabel")
+	bigStatus.Name = "BigStatus"
+	bigStatus.BackgroundTransparency = 1
+	bigStatus.Size = UDim2.new(1, 0, 0, 36)
+	bigStatus.Position = UDim2.fromOffset(0, 0)
+	bigStatus.Text = ""
+	bigStatus.Font = FontTitle
+	bigStatus.TextSize = 26
+	bigStatus.TextColor3 = TextC
+	bigStatus.ZIndex = 11
+	bigStatus.Parent = center
+
+	-- K2 logo under text
+	local logoBox = Instance.new("Frame")
+	logoBox.AnchorPoint = Vector2.new(0.5, 0)
+	logoBox.Position = UDim2.new(0.5, 0, 0, 48)
+	logoBox.Size = UDim2.fromOffset(52, 52)
+	logoBox.BackgroundColor3 = Color3.fromRGB(20, 24, 36)
+	logoBox.BorderSizePixel = 0
+	logoBox.ZIndex = 11
+	logoBox.Parent = center
+	corner(logoBox, 26)
+	local logoRing = Instance.new("UIStroke")
+	logoRing.Color = Accent
+	logoRing.Thickness = 2
+	logoRing.Transparency = 0.25
+	logoRing.Parent = logoBox
+	local logoTxt = Instance.new("TextLabel")
+	logoTxt.Size = UDim2.fromScale(1, 1)
+	logoTxt.BackgroundTransparency = 1
+	logoTxt.Text = "K2"
+	logoTxt.Font = FontTitle
+	logoTxt.TextSize = 16
+	logoTxt.TextColor3 = TextC
+	logoTxt.ZIndex = 12
+	logoTxt.Parent = logoBox
+
+	-- time under logo
+	local clockLabel = Instance.new("TextLabel")
+	clockLabel.Name = "Clock"
+	clockLabel.BackgroundTransparency = 1
+	clockLabel.Position = UDim2.fromOffset(0, 110)
+	clockLabel.Size = UDim2.new(1, 0, 0, 20)
+	clockLabel.Text = "00:00:00"
+	clockLabel.Font = FontBody
+	clockLabel.TextSize = 13
+	clockLabel.TextColor3 = Muted
+	clockLabel.ZIndex = 11
+	clockLabel.Parent = center
+
+	-- Typewriter
+	local TYPE_FULL = "Auto Accept Active, Goodnight!"
+	local typingToken = 0
+	local function runTypewriter()
+		typingToken += 1
+		local token = typingToken
+		task.spawn(function()
+			while token == typingToken and bigStatus.Parent do
+				for i = 1, #TYPE_FULL do
+					if token ~= typingToken then return end
+					bigStatus.Text = TYPE_FULL:sub(1, i)
+					task.wait(0.04)
+				end
+				task.wait(2.4)
+				for i = #TYPE_FULL, 0, -1 do
+					if token ~= typingToken then return end
+					bigStatus.Text = TYPE_FULL:sub(1, i)
+					task.wait(0.025)
+				end
+				task.wait(0.5)
+			end
+		end)
+	end
+	runTypewriter()
+
+	local t0 = os.clock()
+	task.spawn(function()
+		while clockLabel.Parent do
+			local sec = math.floor(os.clock() - t0)
+			local h = math.floor(sec / 3600)
+			local m = math.floor((sec % 3600) / 60)
+			local s = sec % 60
+			clockLabel.Text = string.format("%02d:%02d:%02d", h, m, s)
+			task.wait(1)
+		end
+	end)
+
+	-- SMALL top-right brainrot list
 	local card = Instance.new("Frame")
 	card.Name = "BrainrotList"
-	card.AnchorPoint = Vector2.new(0.5, 0)
-	card.Position = UDim2.new(0.5, 0, 0.42, 0)
-	card.Size = UDim2.new(0, 420, 0, 300)
-	card.BackgroundColor3 = CONFIG.Card
-	card.BackgroundTransparency = 0.15
+	card.AnchorPoint = Vector2.new(1, 0)
+	card.Position = UDim2.new(1, -16, 0, 16)
+	card.Size = UDim2.fromOffset(220, 250)
+	card.BackgroundColor3 = Color3.fromRGB(10, 12, 20)
+	card.BackgroundTransparency = 0.12
 	card.BorderSizePixel = 0
-	card.ZIndex = 10
-	card.ClipsDescendants = true
+	card.ZIndex = 20
 	card.Parent = root
-	corner(card, 16)
-	local cardStroke = Instance.new("UIStroke", card)
-	cardStroke.Color = CONFIG.CardBorder
-	cardStroke.Thickness = 1.5
+	corner(card, 14)
+	local cardStroke = Instance.new("UIStroke")
+	cardStroke.Color = Color3.fromRGB(80, 110, 170)
+	cardStroke.Thickness = 1.2
 	cardStroke.Transparency = 0.35
+	cardStroke.Parent = card
 
-	local listTitle = Instance.new("TextLabel", card)
+	local listTitle = Instance.new("TextLabel")
 	listTitle.BackgroundTransparency = 1
-	listTitle.Position = UDim2.new(0, 16, 0, 12)
-	listTitle.Size = UDim2.new(1, -32, 0, 22)
-	listTitle.Text = "Your Base  ·  Best → Worst"
-	listTitle.Font = Enum.Font.GothamBold
-	listTitle.TextSize = 13
-	listTitle.TextColor3 = CONFIG.Accent
+	listTitle.Position = UDim2.fromOffset(12, 10)
+	listTitle.Size = UDim2.new(1, -24, 0, 16)
+	listTitle.Text = "Base · Best → Worst"
+	listTitle.Font = FontTitle
+	listTitle.TextSize = 11
+	listTitle.TextColor3 = Accent
 	listTitle.TextXAlignment = Enum.TextXAlignment.Left
-	listTitle.ZIndex = 11
+	listTitle.ZIndex = 21
+	listTitle.Parent = card
 
-	totalLabel = Instance.new("TextLabel", card)
+	totalLabel = Instance.new("TextLabel")
 	totalLabel.BackgroundTransparency = 1
-	totalLabel.Position = UDim2.new(0, 16, 0, 34)
-	totalLabel.Size = UDim2.new(1, -32, 0, 16)
+	totalLabel.Position = UDim2.fromOffset(12, 26)
+	totalLabel.Size = UDim2.new(1, -24, 0, 14)
 	totalLabel.Text = "Scanning…"
-	totalLabel.Font = Enum.Font.Gotham
-	totalLabel.TextSize = 11
-	totalLabel.TextColor3 = CONFIG.Muted
+	totalLabel.Font = FontBody
+	totalLabel.TextSize = 10
+	totalLabel.TextColor3 = Muted
 	totalLabel.TextXAlignment = Enum.TextXAlignment.Left
-	totalLabel.ZIndex = 11
+	totalLabel.ZIndex = 21
+	totalLabel.Parent = card
 
-	local scroll = Instance.new("ScrollingFrame", card)
+	local scroll = Instance.new("ScrollingFrame")
 	scroll.Name = "ListScroll"
-	scroll.Position = UDim2.new(0, 12, 0, 56)
-	scroll.Size = UDim2.new(1, -24, 1, -68)
+	scroll.Position = UDim2.fromOffset(8, 44)
+	scroll.Size = UDim2.new(1, -16, 1, -52)
 	scroll.BackgroundTransparency = 1
 	scroll.BorderSizePixel = 0
-	scroll.ScrollBarThickness = 3
-	scroll.ScrollBarImageColor3 = CONFIG.Accent
+	scroll.ScrollBarThickness = 2
+	scroll.ScrollBarImageColor3 = Accent
 	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-	scroll.ScrollingEnabled = true
-	scroll.Active = true
-	scroll.Selectable = false
-	scroll.ZIndex = 11
-	-- block accidental interaction with rows
 	scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	scroll.ZIndex = 21
+	scroll.Parent = card
 
-	listHolder = Instance.new("Frame", scroll)
+	listHolder = Instance.new("Frame")
 	listHolder.BackgroundTransparency = 1
 	listHolder.Size = UDim2.new(1, 0, 0, 0)
 	listHolder.AutomaticSize = Enum.AutomaticSize.Y
-	listHolder.ZIndex = 11
+	listHolder.ZIndex = 21
+	listHolder.Parent = scroll
 
-	listLayout = Instance.new("UIListLayout", listHolder)
+	listLayout = Instance.new("UIListLayout")
 	listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	listLayout.Padding = UDim.new(0, 6)
+	listLayout.Padding = UDim.new(0, 4)
+	listLayout.Parent = listHolder
 
 	listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		scroll.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 8)
+		scroll.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 4)
 	end)
 
-	-- bottom tip
-	local tip = Instance.new("TextLabel", root)
-	tip.AnchorPoint = Vector2.new(0.5, 1)
-	tip.Position = UDim2.new(0.5, 0, 1, -16)
-	tip.Size = UDim2.new(0, 400, 0, 18)
-	tip.BackgroundTransparency = 1
-	tip.Text = "List updates every 30s  ·  Non-targets auto-cancel"
-	tip.Font = Enum.Font.Gotham
-	tip.TextSize = 11
-	tip.TextColor3 = CONFIG.Muted
-	tip.ZIndex = 10
+	statusDot = nil
+	_G.K2AcceptEnabled = true
 end
 
 local function clearList()
@@ -729,9 +720,9 @@ local function refreshList()
 	for i, item in ipairs(ranked) do
 		total += item.gen
 		local row = Instance.new("Frame")
-		row.Size = UDim2.new(1, 0, 0, 34)
-		row.BackgroundColor3 = Color3.fromRGB(22, 26, 44)
-		row.BackgroundTransparency = 0.25
+		row.Size = UDim2.new(1, 0, 0, 26)
+		row.BackgroundColor3 = Color3.fromRGB(18, 22, 34)
+		row.BackgroundTransparency = 0.35
 		row.BorderSizePixel = 0
 		row.ZIndex = 12
 		row.LayoutOrder = i
@@ -753,31 +744,31 @@ local function refreshList()
 		rank.BackgroundTransparency = 1
 		rank.Text = "#" .. i
 		rank.Font = Enum.Font.GothamBold
-		rank.TextSize = 12
-		rank.TextColor3 = (i <= 3) and CONFIG.Accent or CONFIG.Muted
+		rank.TextSize = 10
+		rank.TextColor3 = (i <= 3) and Color3.fromRGB(160, 190, 255) or Color3.fromRGB(130, 145, 175)
 		rank.TextXAlignment = Enum.TextXAlignment.Left
 		rank.ZIndex = 13
 
 		local name = Instance.new("TextLabel", row)
-		name.Size = UDim2.new(1, -140, 1, 0)
-		name.Position = UDim2.new(0, 40, 0, 0)
+		name.Size = UDim2.new(1, -100, 1, 0)
+		name.Position = UDim2.new(0, 32, 0, 0)
 		name.BackgroundTransparency = 1
 		name.Text = item.name
 		name.Font = Enum.Font.GothamMedium
-		name.TextSize = 12
+		name.TextSize = 10
 		name.TextColor3 = Color3.new(1, 1, 1)
 		name.TextXAlignment = Enum.TextXAlignment.Left
 		name.TextTruncate = Enum.TextTruncate.AtEnd
 		name.ZIndex = 13
 
 		local gen = Instance.new("TextLabel", row)
-		gen.Size = UDim2.new(0, 90, 1, 0)
-		gen.Position = UDim2.new(1, -98, 0, 0)
+		gen.Size = UDim2.new(0, 68, 1, 0)
+		gen.Position = UDim2.new(1, -72, 0, 0)
 		gen.BackgroundTransparency = 1
 		gen.Text = "$" .. item.genStr
 		gen.Font = Enum.Font.GothamBold
-		gen.TextSize = 12
-		gen.TextColor3 = CONFIG.Success
+		gen.TextSize = 10
+		gen.TextColor3 = Color3.fromRGB(180, 200, 255)
 		gen.TextXAlignment = Enum.TextXAlignment.Right
 		gen.ZIndex = 13
 	end
@@ -791,7 +782,7 @@ local function refreshList()
 end
 
 ------------------------------------------------------------
--- ACCEPT LOGIC (Chocola)
+-- ACCEPT LOGIC (Chocola prompts + Zeus-style descendant scan)
 ------------------------------------------------------------
 local function acceptTradePrompt(prompt)
 	if not acceptEnabled then return end
@@ -799,7 +790,9 @@ local function acceptTradePrompt(prompt)
 	if yes then
 		print("[K2] Trade Request → Yes")
 		clickGui(yes)
+		return true
 	end
+	return false
 end
 
 local function tryReadyButton()
@@ -815,28 +808,81 @@ local function tryReadyButton()
 		local readyBtn = other:FindFirstChild("ReadyButton")
 		if readyBtn then clickGui(readyBtn) end
 	end
+	-- also any Ready / Accept text buttons under trade UI
+	for _, d in ipairs(inner:GetDescendants()) do
+		if d:IsA("TextButton") or d:IsA("ImageButton") then
+			local t = (d.Text or d.Name or ""):lower()
+			if t == "ready" or t == "accept" or t:find("ready", 1, true) then
+				clickGui(d)
+			end
+		end
+	end
 	if readyRE then pcall(function() readyRE:FireServer(READY_GUID) end) end
 	if acceptRE then pcall(function() acceptRE:FireServer(ACCEPT_GUID) end) end
 end
 
+-- Zeus-style: continuous scan of PlayerGui for trade Yes / Accept / Ready
+local lastClick = 0
+local function zeusScanAccept()
+	if not acceptEnabled then return end
+	local now = os.clock()
+	if now - lastClick < 0.15 then return end
+	local pg = LocalPlayer:FindFirstChild("PlayerGui")
+	if not pg then return end
+
+	-- Trade Request prompts anywhere
+	for _, d in ipairs(pg:GetDescendants()) do
+		if d.Name == "Prompt" or d.Name == "TradeRequest" then
+			local label = d:FindFirstChild("Label", true) or d:FindFirstChild("TextLabel", true)
+			local txt = label and tostring(label.Text or "") or ""
+			if txt == "Trade Request" or txt:lower():find("trade request", 1, true) then
+				if acceptTradePrompt(d) then
+					lastClick = now
+					return
+				end
+			end
+		end
+		-- direct Yes button next to Trade Request context
+		if (d:IsA("TextButton") or d:IsA("ImageButton")) then
+			local t = (d.Text or ""):lower()
+			local n = (d.Name or ""):lower()
+			if t == "yes" or n == "yes" then
+				-- only if a nearby label mentions trade
+				local parent = d.Parent
+				if parent then
+					local near = parent:FindFirstChild("Label", true) or parent:FindFirstChildWhichIsA("TextLabel", true)
+					local nt = near and tostring(near.Text or ""):lower() or ""
+					if nt:find("trade", 1, true) or nt:find("request", 1, true) or parent.Name:lower():find("prompt", 1, true) then
+						clickGui(d)
+						lastClick = now
+						return
+					end
+				end
+			end
+		end
+	end
+end
+
 local function placeAFKTag()
-	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	local char = LocalPlayer.Character
+	if not char then return end
 	local head = char:FindFirstChild("Head")
 	if not head or head:FindFirstChild("AFKTag") then return end
 	local bb = Instance.new("BillboardGui")
 	bb.Name = "AFKTag"
-	bb.Size = UDim2.new(0, 200, 0, 50)
-	bb.StudsOffset = Vector3.new(0, 2.5, 0)
+	bb.Size = UDim2.new(0, 220, 0, 40)
+	bb.StudsOffset = Vector3.new(0, 2.6, 0)
 	bb.AlwaysOnTop = true
 	bb.Parent = head
 	local tl = Instance.new("TextLabel")
 	tl.Size = UDim2.fromScale(1, 1)
 	tl.BackgroundTransparency = 1
-	tl.Text = "K2 Auto Accept AFK"
-	tl.TextColor3 = CONFIG.Accent
-	tl.TextStrokeTransparency = 0
+	tl.Text = "⚡ K2 Auto Accept ⚡"
+	tl.TextColor3 = Color3.fromRGB(160, 190, 255)
+	tl.TextStrokeTransparency = 0.3
+	tl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	tl.TextScaled = true
-	tl.Font = Enum.Font.GothamBold
+	tl.Font = Enum.Font.GothamBlack
 	tl.Parent = bb
 end
 
@@ -847,36 +893,29 @@ print("[K2] Full-screen Auto Accept loading…")
 buildGui()
 task.defer(refreshList)
 
--- scan every 30s
+-- scan base every 30s
 task.spawn(function()
 	while task.wait(30) do
 		pcall(refreshList)
 	end
 end)
 
--- anti-afk jump 45s
+-- anti-afk jump ~45s (Zeus Anti AFK)
 task.spawn(function()
 	while task.wait(45) do
-		local char = LocalPlayer.Character
-		if char then
-			local hum = char:FindFirstChildOfClass("Humanoid")
-			if hum and hum.Health > 0 then
-				hum:ChangeState(Enum.HumanoidStateType.Jumping)
-			end
-		end
-		if statusDot and acceptEnabled and statusDot.Text ~= "🔄 AFK" then
-			statusDot.Text = "🔄 AFK"
-			statusDot.TextColor3 = Color3.fromRGB(255, 200, 0)
-			task.wait(2)
-			if acceptEnabled then
-				statusDot.Text = "● Active"
-				statusDot.TextColor3 = CONFIG.Success
+		if antiAfkEnabled then
+			local char = LocalPlayer.Character
+			if char then
+				local hum = char:FindFirstChildOfClass("Humanoid")
+				if hum and hum.Health > 0 then
+					pcall(function() hum:ChangeState(Enum.HumanoidStateType.Jumping) end)
+				end
 			end
 		end
 	end
 end)
 
--- anti-restart click 60s
+-- anti-idle / anti-restart click 60s
 task.spawn(function()
 	while task.wait(60) do
 		pcall(function()
@@ -887,24 +926,36 @@ task.spawn(function()
 	end
 end)
 
-task.delay(2, function()
+-- disable Roblox idle kick
+pcall(function()
+	for _, v in pairs(getconnections(LocalPlayer.Idled)) do
+		if v.Disable then v:Disable() elseif v.Disconnect then v:Disconnect() end
+	end
+end)
+LocalPlayer.Idled:Connect(function() end)
+
+-- Ready spam + Zeus descendant scan
+task.spawn(function()
+	while task.wait(0.35) do
+		pcall(tryReadyButton)
+		pcall(zeusScanAccept)
+	end
+end)
+
+-- Chocola: DuelsMachinePrompt ChildAdded
+task.spawn(function()
 	local pg = LocalPlayer:WaitForChild("PlayerGui")
-	local root = pg:FindFirstChild("DuelsMachinePrompt") or pg:WaitForChild("DuelsMachinePrompt", 60)
+	local root = pg:FindFirstChild("DuelsMachinePrompt") or pg:WaitForChild("DuelsMachinePrompt", 90)
 	if not root then
-		warn("[K2] DuelsMachinePrompt not found")
+		warn("[K2] DuelsMachinePrompt not found — Zeus scan still active")
 		return
 	end
 	local inner = root:FindFirstChild("DuelsMachinePrompt") or root
+
 	placeAFKTag()
 	LocalPlayer.CharacterAdded:Connect(function()
 		task.wait(1)
 		placeAFKTag()
-	end)
-
-	task.spawn(function()
-		while task.wait(0.5) do
-			tryReadyButton()
-		end
 	end)
 
 	inner.ChildAdded:Connect(function(child)
@@ -925,13 +976,23 @@ task.delay(2, function()
 			end
 		end
 	end
-	print("[K2] DuelsMachinePrompt hooked")
+	print("[K2] DuelsMachinePrompt + Zeus scan hooked")
 end)
 
 pcall(function()
 	local env = (typeof(getgenv) == "function" and getgenv()) or _G
 	env.K2SendInvite = SendInvite
 	env.K2CancelTrade = cancelTrade
+	env.SAB_AcceptStop = function()
+		acceptEnabled = false
+		antiAfkEnabled = false
+		local g = LocalPlayer.PlayerGui:FindFirstChild("K2AutoAcceptFS")
+		if g then g:Destroy() end
+	end
+	env.K2AcceptEnabled = function(v)
+		if v ~= nil then acceptEnabled = not not v end
+		return acceptEnabled
+	end
 end)
 
-print("[K2 Auto Accept FS] loaded")
+print("[K2 Auto Accept FS] loaded — accept + cancel ready")
